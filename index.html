@@ -18,11 +18,14 @@
     <!-- 让搜索引擎知道这是中文网站 -->
     <meta http-equiv="content-language" content="zh-CN">
     <!-- 内容安全策略：仅允许必要资源 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; font-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; media-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com https://gcore.jsdelivr.net; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://gcore.jsdelivr.net; media-src 'self';">
     <!-- 网站图标 -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
-    <!-- 霞鹜文楷：开源手写楷书，温暖人文 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
+    <!-- 霞鹜文楷：备用CDN源 + Google Fonts Noto Serif SC -->
+    <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400&display=swap" rel="stylesheet">
     <style>
         /* ============================================
            星洞 · 深夜情绪树洞 v2.1
@@ -50,7 +53,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'LXGW WenKai', 'Georgia', serif;
+            font-family: 'LXGW WenKai', 'Noto Serif SC', 'STKaiti', 'KaiTi', 'Georgia', serif;
             background: var(--bg-deep);
             color: var(--text-primary);
             min-height: 100vh;
@@ -58,13 +61,13 @@
             transition: background 2s ease;
         }
 
-        /* ---------- 星空画布 ---------- */
+        /* ---------- 星空画布（支持点击流星彩蛋） ---------- */
         #starCanvas {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 0;
-            pointer-events: none;
+            cursor: default;
         }
 
         /* ---------- 主容器 ---------- */
@@ -1341,7 +1344,63 @@
         }
         resize();
         window.addEventListener('resize', resize);
+
+        // 流星彩蛋：点击流星，闪烁后消失
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // 检查是否点中某颗流星（20px容差范围）
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                const m = meteors[i];
+                const dx = clickX - m.x;
+                const dy = clickY - m.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                // 流星有头部+尾巴，检测范围适当放宽
+                const speed = Math.sqrt(m.vx * m.vx + m.vy * m.vy);
+                const tailX = m.x - (m.vx / speed) * m.length * m.life;
+                const tailY = m.y - (m.vy / speed) * m.length * m.life;
+
+                if (dist < 30 || isNearLine(clickX, clickY, m.x, m.y, tailX, tailY, 15)) {
+                    // 命中！触发闪烁爆炸效果
+                    triggerMeteorBurst(m);
+                    meteors.splice(i, 1);
+                    break;
+                }
+            }
+        });
+
         animateStars();
+    }
+
+    // 判断点是否靠近线段
+    function isNearLine(px, py, x1, y1, x2, y2, threshold) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq === 0) return Math.sqrt((px-x1)*(px-x1)+(py-y1)*(py-y1)) < threshold;
+        let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+        const nearX = x1 + t * dx, nearY = y1 + t * dy;
+        const dist = Math.sqrt((px - nearX) * (px - nearX) + (py - nearY) * (py - nearY));
+        return dist < threshold;
+    }
+
+    // 流星爆发效果：闪烁后产生粒子
+    let burstParticles = [];
+    function triggerMeteorBurst(m) {
+        // 产生5-8颗爆散粒子
+        for (let i = 0; i < 6; i++) {
+            burstParticles.push({
+                x: m.x, y: m.y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                life: 1.0,
+                decay: 0.02 + Math.random() * 0.03,
+                radius: m.width * (0.5 + Math.random()),
+                hue: m.hue
+            });
+        }
     }
 
     function initBgStars() {
@@ -1435,6 +1494,27 @@
             ctx.fill();
         });
         meteors = meteors.filter(m => m.life > 0);
+
+        // 绘制爆散粒子（流星彩蛋效果）
+        burstParticles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.05; // 微重力
+            p.life -= p.decay;
+            if (p.life <= 0) return;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.max(0.1, p.radius * p.life), 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${p.hue}, 80%, 90%, ${p.life})`;
+            ctx.fill();
+            // 粒子光晕
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, Math.max(0.1, p.radius * p.life * 3), 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${p.hue}, 60%, 85%, ${p.life * 0.15})`;
+            ctx.fill();
+        });
+        burstParticles = burstParticles.filter(p => p.life > 0);
+
         requestAnimationFrame(animateStars);
     }
 
@@ -2227,7 +2307,10 @@
         document.getElementById('overlay').classList.toggle('show');
     }
     function toggleNoisePanel() {
-        document.getElementById('noisePanel').classList.toggle('open');
+        const panel = document.getElementById('noisePanel');
+        const overlay = document.getElementById('overlay');
+        panel.classList.toggle('open');
+        overlay.classList.toggle('show', panel.classList.contains('open'));
     }
     function toggleSafetyPanel() {
         document.getElementById('safetyPanel').classList.toggle('open');
