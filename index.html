@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星洞 · 深夜树洞 | 你的星空倾听者</title>
+    <!-- SEO 优化：让搜索引擎能收录并理解网站 -->
+    <meta name="description" content="星洞是一个免费的匿名深夜树洞。流星星空背景，AI温柔共情陪伴，无需注册，本地存储，一键销毁。深夜孤独人群的私密情绪出口。">
+    <meta name="keywords" content="深夜树洞,匿名倾诉,情绪陪伴,AI聊天,心理安慰,星空,流星,深夜失眠,免费树洞,情绪出口,匿名心理网站">
+    <meta name="author" content="星洞 Starry Hole">
+    <meta name="robots" content="index, follow">
+    <!-- Open Graph：社交平台分享预览 -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="星洞 · 深夜树洞 — 你的星空倾听者">
+    <meta property="og:description" content="今夜，星星在听。免费匿名深夜树洞，流星星空背景，AI温柔共情，无需注册，一键销毁。">
+    <meta property="og:site_name" content="星洞 Starry Hole">
+    <meta property="og:locale" content="zh_CN">
+    <!-- 让搜索引擎知道这是中文网站 -->
+    <meta http-equiv="content-language" content="zh-CN">
+    <!-- 网站图标 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+    <!-- 霞鹜文楷：开源手写楷书，温暖人文 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
+    <style>
+        /* ============================================
+           星洞 · 深夜情绪树洞 v2.0
+           新增：情绪急救箱 / 星空呼吸 / 模式切换
+           认知卡片 / 快速倾诉 / 自动过期
+           情绪画像 / 危机检测
+           ============================================ */
+
+        :root {
+            --bg-deep: #0a0e1a;
+            --bg-mid: #111832;
+            --accent-warm: #f5c26b;
+            --accent-cool: #7eb8da;
+            --accent-sad: #8b7eb8;
+            --accent-happy: #ffd700;
+            --accent-green: #7edaa0;
+            --text-primary: #e8e0d4;
+            --text-secondary: #9a9aaa;
+            --card-bg: rgba(18, 25, 50, 0.75);
+            --card-border: rgba(126, 184, 218, 0.15);
+            --glass: rgba(15, 20, 40, 0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'LXGW WenKai', 'Georgia', serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 2s ease;
+        }
+
+        /* ---------- 星空画布 ---------- */
+        #starCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ---------- 主容器 ---------- */
+        .app-container {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---------- 顶部栏 ---------- */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            backdrop-filter: blur(10px);
+            background: var(--glass);
+            border-bottom: 1px solid var(--card-border);
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: var(--accent-warm);
+        }
+        .logo span { font-size: 12px; color: var(--text-secondary); letter-spacing: 2px; margin-left: 8px; }
+        .top-actions { display: flex; gap: 6px; }
+
+        /* ---------- 顶部文字按钮（替代图标） ---------- */
+        .text-btn {
+            padding: 6px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            backdrop-filter: blur(6px);
+            white-space: nowrap;
+        }
+        .text-btn:hover { border-color: var(--accent-cool); color: var(--accent-cool); }
+        .text-btn.active { border-color: var(--accent-warm); color: var(--accent-warm); background: rgba(245,194,107,0.1); }
+
+        /* ---------- 通用按钮 ---------- */
+        .icon-btn {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s;
+            backdrop-filter: blur(6px);
+            position: relative;
+        }
+        .icon-btn:hover { border-color: var(--accent-cool); color: var(--accent-cool); }
+        .icon-btn.active { border-color: var(--accent-warm); color: var(--accent-warm); background: rgba(245,194,107,0.1); }
+
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 12px;
+            background: rgba(10,14,26,0.95);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            margin-bottom: 8px;
+        }
+        .icon-btn:hover .tooltip { opacity: 1; }
+
+        /* ---------- 欢迎区域 ---------- */
+        .welcome-section {
+            text-align: center;
+            padding: 40px 20px 20px;
+            animation: fadeInUp 1s ease;
+        }
+        .welcome-section h1 {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent-warm), var(--accent-cool));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .welcome-section p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-style: italic;
+            letter-spacing: 2px;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---------- 倾诉模式切换 ---------- */
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            margin: 0 auto;
+            width: fit-content;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .mode-switch {
+            position: relative;
+            width: 40px; height: 20px;
+            border-radius: 10px;
+            background: rgba(126,184,218,0.2);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .mode-switch.active { background: rgba(245,194,107,0.3); }
+        .mode-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cool);
+            transition: all 0.3s;
+        }
+        .mode-switch.active::after {
+            left: 22px;
+            background: var(--accent-warm);
+        }
+
+        /* ---------- 对话区域 ---------- */
+        .chat-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        /* ---------- 星空信纸样式 ---------- */
+        .letter {
+            max-width: 75%;
+            padding: 20px 24px;
+            border-radius: 16px;
+            position: relative;
+            animation: letterAppear 0.6s ease;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        .letter::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 16px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(245,194,107,0.2), rgba(126,184,218,0.2));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .letter.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, rgba(30,40,70,0.8), rgba(20,30,60,0.8));
+            border: 1px solid rgba(245,194,107,0.15);
+        }
+        .letter.user .letter-time { text-align: right; }
+        .letter.ai {
+            align-self: flex-start;
+            background: linear-gradient(135deg, rgba(18,28,55,0.85), rgba(12,20,45,0.85));
+            border: 1px solid rgba(126,184,218,0.15);
+        }
+        .letter.ai::after {
+            content: '✦';
+            position: absolute;
+            top: 12px; right: 14px;
+            font-size: 10px;
+            color: var(--accent-cool);
+            opacity: 0.5;
+        }
+        .letter-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            opacity: 0.6;
+        }
+
+        /* ---------- 认知引导卡片 ---------- */
+        .cognitive-card {
+            max-width: 75%;
+            align-self: flex-start;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(126,218,160,0.2);
+            background: linear-gradient(135deg, rgba(18,35,40,0.7), rgba(12,28,35,0.7));
+            font-size: 13px;
+            color: var(--accent-green);
+            line-height: 1.7;
+            animation: letterAppear 0.8s ease;
+            cursor: pointer;
+        }
+        .cognitive-card::before {
+            content: '💭';
+            margin-right: 6px;
+        }
+        .cognitive-card .card-toggle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            display: block;
+        }
+        .cognitive-card .card-detail {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(126,218,160,0.1);
+            color: var(--text-secondary);
+            font-size: 12px;
+            line-height: 1.8;
+        }
+        .cognitive-card.expanded .card-detail { display: block; }
+        .cognitive-card.expanded .card-toggle::after { content: ' 收起'; }
+        .cognitive-card:not(.expanded) .card-toggle::after { content: ' 展开看看'; }
+
+        /* ---------- 安全提示卡片 ---------- */
+        .crisis-card {
+            max-width: 80%;
+            align-self: center;
+            padding: 18px 24px;
+            border-radius: 14px;
+            border: 1px solid rgba(231,76,60,0.25);
+            background: linear-gradient(135deg, rgba(40,18,18,0.8), rgba(30,12,12,0.8));
+            font-size: 13px;
+            color: #e8a0a0;
+            line-height: 1.8;
+            animation: letterAppear 0.8s ease;
+            text-align: center;
+        }
+        .crisis-card .hotline {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 20px;
+            border-radius: 20px;
+            background: rgba(231,76,60,0.15);
+            border: 1px solid rgba(231,76,60,0.3);
+            color: #e74c3c;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-decoration: none;
+        }
+
+        /* ---------- 正向反馈条 ---------- */
+        .brave-banner {
+            align-self: center;
+            padding: 10px 24px;
+            border-radius: 20px;
+            background: rgba(245,194,107,0.08);
+            border: 1px solid rgba(245,194,107,0.15);
+            color: var(--accent-warm);
+            font-size: 13px;
+            letter-spacing: 2px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        /* AI打字指示器 */
+        .typing-indicator {
+            align-self: flex-start;
+            padding: 16px 24px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            display: none;
+        }
+        .typing-indicator.show { display: flex; gap: 6px; align-items: center; }
+        .typing-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent-cool);
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-6px); }
+        }
+        @keyframes letterAppear {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ---------- 输入区域 ---------- */
+        .input-area {
+            padding: 16px 20px 24px;
+            backdrop-filter: blur(12px);
+            background: var(--glass);
+            border-top: 1px solid var(--card-border);
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        .input-wrapper textarea {
+            width: 100%;
+            min-height: 48px;
+            max-height: 120px;
+            padding: 14px 18px;
+            border-radius: 24px;
+            border: 1px solid var(--card-border);
+            background: rgba(15,20,40,0.5);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s;
+            line-height: 1.5;
+        }
+        .input-wrapper textarea::placeholder {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .input-wrapper textarea:focus {
+            border-color: rgba(245,194,107,0.4);
+        }
+        .send-btn {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-warm);
+            background: rgba(245,194,107,0.1);
+            color: var(--accent-warm);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .send-btn:hover {
+            background: rgba(245,194,107,0.2);
+            transform: scale(1.05);
+        }
+
+        /* ---------- 工具栏 ---------- */
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .tool-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .tool-chip:hover { border-color: var(--accent-cool); color: var(--accent-cool); }
+        .tool-chip.active {
+            border-color: var(--accent-cool);
+            color: var(--accent-cool);
+            background: rgba(126,184,218,0.1);
+        }
+        .tool-chip .recording {
+            color: #e74c3c;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ---------- 情绪选择器 ---------- */
+        .mood-selector {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .mood-selector::-webkit-scrollbar { display: none; }
+        .mood-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.4s;
+        }
+        .mood-chip:hover { border-color: var(--accent-cool); }
+        .mood-chip.selected {
+            border-color: var(--accent-warm);
+            color: var(--accent-warm);
+            background: rgba(245,194,107,0.08);
+        }
+
+        /* ---------- 快速倾诉面板 ---------- */
+        .quick-vent {
+            display: none;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            background: rgba(15,20,40,0.4);
+            margin-bottom: 12px;
+        }
+        .quick-vent.show { display: block; animation: fadeInUp 0.4s ease; }
+        .quick-vent-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        .quick-emojis {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .quick-emoji {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .quick-emoji:hover, .quick-emoji.selected {
+            border-color: var(--accent-warm);
+            background: rgba(245,194,107,0.1);
+            transform: scale(1.1);
+        }
+        .quick-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .quick-tag {
+            padding: 5px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .quick-tag:hover, .quick-tag.selected {
+            border-color: var(--accent-cool);
+            color: var(--accent-cool);
+            background: rgba(126,184,218,0.08);
+        }
+        .quick-submit {
+            padding: 8px 20px;
+            border-radius: 16px;
+            border: 1px solid var(--accent-warm);
+            background: rgba(245,194,107,0.08);
+            color: var(--accent-warm);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+        }
+        .quick-submit:hover { background: rgba(245,194,107,0.15); }
+
+        /* ---------- 情绪急救箱面板 ---------- */
+        .firstaid-panel {
+            position: fixed;
+            top: 0; left: -400px;
+            width: 380px;
+            max-width: 88vw;
+            height: 100vh;
+            background: linear-gradient(180deg, rgba(10,14,26,0.98), rgba(17,24,50,0.98));
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            transition: left 0.5s cubic-bezier(0.4,0,0.2,1);
+            padding: 30px;
+            overflow-y: auto;
+            border-right: 1px solid var(--card-border);
+        }
+        .firstaid-panel.open { left: 0; }
+
+        .firstaid-categories {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .firstaid-cat {
+            padding: 16px 20px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .firstaid-cat:hover {
+            border-color: var(--accent-cool);
+            background: rgba(126,184,218,0.05);
+        }
+        .firstaid-cat-icon { font-size: 22px; margin-bottom: 8px; }
+        .firstaid-cat-title {
+            font-size: 14px;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        .firstaid-cat-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ---------- 星空呼吸全屏 ---------- */
+        .breath-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10,14,26,0.95);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+        .breath-overlay.show { display: flex; animation: fadeIn 0.6s ease; }
+        .breath-circle {
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-cool);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            color: var(--accent-cool);
+            letter-spacing: 4px;
+            transition: transform 4s ease-in-out;
+            box-shadow: 0 0 40px rgba(126,184,218,0.1), inset 0 0 40px rgba(126,184,218,0.05);
+        }
+        .breath-circle.inhale {
+            transform: scale(1.6);
+            border-color: var(--accent-warm);
+            box-shadow: 0 0 60px rgba(245,194,107,0.15), inset 0 0 60px rgba(245,194,107,0.08);
+            color: var(--accent-warm);
+        }
+        .breath-circle.exhale {
+            transform: scale(1);
+            border-color: var(--accent-cool);
+            box-shadow: 0 0 40px rgba(126,184,218,0.1), inset 0 0 40px rgba(126,184,218,0.05);
+            color: var(--accent-cool);
+        }
+        .breath-close {
+            padding: 10px 30px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            background: var(--glass);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            letter-spacing: 2px;
+        }
+
+        /* ---------- 涂鸦面板 ---------- */
+        .doodle-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10,14,26,0.95);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+        }
+        .doodle-overlay.show { display: flex; animation: fadeIn 0.6s ease; }
+        .doodle-toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 16px;
+            align-items: center;
+        }
+        .doodle-canvas {
+            flex: 1;
+            cursor: crosshair;
+        }
+        .doodle-color {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .doodle-color.active { border-color: #fff; transform: scale(1.2); }
+
+        /* ---------- 情绪星罐面板 ---------- */
+        .star-jar-panel {
+            position: fixed;
+            top: 0; right: -400px;
+            width: 380px;
+            max-width: 88vw;
+            height: 100vh;
+            background: linear-gradient(180deg, rgba(10,14,26,0.98), rgba(17,24,50,0.98));
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            transition: right 0.5s cubic-bezier(0.4,0,0.2,1);
+            padding: 30px;
+            overflow-y: auto;
+            border-left: 1px solid var(--card-border);
+        }
+        .star-jar-panel.open { right: 0; }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .panel-header h2 {
+            font-size: 18px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: var(--accent-warm);
+        }
+        .jar-container {
+            width: 100%;
+            height: 300px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            background: radial-gradient(ellipse at center, rgba(30,40,80,0.4), rgba(10,14,26,0.8));
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .jar-star {
+            position: absolute;
+            color: var(--accent-warm);
+            font-size: 12px;
+            animation: twinkle 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .jar-star:hover { transform: scale(1.8); }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+        .star-count {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        .star-count strong {
+            color: var(--accent-warm);
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        /* ---------- 情绪画像 ---------- */
+        .mood-chart-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--card-border);
+        }
+        .mood-chart-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .mood-chart-bars {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            justify-content: center;
+            height: 80px;
+            margin-bottom: 10px;
+        }
+        .mood-bar {
+            width: 32px;
+            border-radius: 6px 6px 0 0;
+            transition: height 0.6s ease;
+            position: relative;
+        }
+        .mood-bar-label {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* ---------- 白噪音面板 ---------- */
+        .noise-panel {
+            position: fixed;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 360px;
+            max-width: 90vw;
+            background: linear-gradient(180deg, rgba(10,14,26,0.98), rgba(17,24,50,0.98));
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            transition: bottom 0.5s cubic-bezier(0.4,0,0.2,1);
+            padding: 24px;
+            border-radius: 20px 20px 0 0;
+            border: 1px solid var(--card-border);
+            border-bottom: none;
+        }
+        .noise-panel.open { bottom: 0; }
+        .noise-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(126,184,218,0.08);
+        }
+        .noise-item:last-child { border: none; }
+        .noise-label { font-size: 14px; color: var(--text-primary); letter-spacing: 2px; }
+        .noise-icon { margin-right: 10px; font-size: 16px; }
+        .noise-slider {
+            -webkit-appearance: none;
+            width: 120px; height: 3px;
+            border-radius: 2px;
+            background: rgba(126,184,218,0.2);
+            outline: none;
+        }
+        .noise-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: var(--accent-cool);
+            cursor: pointer;
+        }
+
+        /* ---------- 设置/安全面板 ---------- */
+        .safety-panel {
+            position: fixed;
+            top: 0; left: -400px;
+            width: 380px;
+            max-width: 88vw;
+            height: 100vh;
+            background: linear-gradient(180deg, rgba(10,14,26,0.98), rgba(17,24,50,0.98));
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            transition: left 0.5s cubic-bezier(0.4,0,0.2,1);
+            padding: 30px;
+            overflow-y: auto;
+            border-right: 1px solid var(--card-border);
+        }
+        .safety-panel.open { left: 0; }
+        .safety-section { margin-bottom: 24px; }
+        .safety-section h3 {
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            color: var(--accent-cool);
+            margin-bottom: 12px;
+        }
+        .safety-section p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        .danger-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(231,76,60,0.3);
+            background: rgba(231,76,60,0.08);
+            color: #e74c3c;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+        }
+        .danger-btn:hover {
+            background: rgba(231,76,60,0.15);
+            border-color: rgba(231,76,60,0.5);
+        }
+        .danger-btn.confirm-state {
+            background: rgba(231,76,60,0.2);
+            border-color: #e74c3c;
+        }
+        .expire-info {
+            font-size: 12px;
+            color: var(--accent-warm);
+            opacity: 0.7;
+            margin-top: 6px;
+        }
+
+        /* ---------- 遮罩 ---------- */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .overlay.show { opacity: 1; pointer-events: auto; }
+
+        /* ---------- 星星收集动画 ---------- */
+        .star-collect {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            font-size: 20px;
+            color: var(--accent-warm);
+            animation: starFly 1.2s ease-in forwards;
+        }
+        @keyframes starFly {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.5) translateY(-40px); }
+            100% { opacity: 0; transform: scale(0.3) translateY(-100px); }
+        }
+
+        /* ---------- 情绪粒子 ---------- */
+        .emotion-sparkle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
+            color: var(--accent-warm);
+            animation: sparkleFloat 2s ease-in forwards;
+        }
+        @keyframes sparkleFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-80px) scale(0); }
+        }
+
+        /* ---------- 滚动条 ---------- */
+        .chat-area::-webkit-scrollbar { width: 4px; }
+        .chat-area::-webkit-scrollbar-track { background: transparent; }
+        .chat-area::-webkit-scrollbar-thumb {
+            background: rgba(126,184,218,0.2);
+            border-radius: 2px;
+        }
+
+        .letter.reading {
+            border-color: var(--accent-warm) !important;
+            box-shadow: 0 0 20px rgba(245,194,107,0.15);
+        }
+
+        /* ---------- 星星跳转高亮 ---------- */
+        .letter.star-highlight {
+            border-color: var(--accent-warm) !important;
+            box-shadow: 0 0 25px rgba(245,194,107,0.25), 0 0 50px rgba(245,194,107,0.1);
+            animation: starHighlight 0.6s ease;
+        }
+        @keyframes starHighlight {
+            0% { box-shadow: 0 0 0 rgba(245,194,107,0); }
+            50% { box-shadow: 0 0 30px rgba(245,194,107,0.35), 0 0 60px rgba(245,194,107,0.15); }
+            100% { box-shadow: 0 0 25px rgba(245,194,107,0.25), 0 0 50px rgba(245,194,107,0.1); }
+        }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 600px) {
+            .welcome-section h1 { font-size: 22px; letter-spacing: 4px; }
+            .letter { max-width: 88%; padding: 16px 18px; font-size: 14px; }
+            .top-bar { padding: 12px 16px; }
+            .chat-area { padding: 16px; }
+            .input-area { padding: 12px 16px 20px; }
+            .jar-container { height: 220px; }
+        }
+
+        .fade-in { animation: fadeIn 1.2s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="starCanvas"></canvas>
+
+<div class="app-container">
+
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <div class="logo">
+            星洞 <span>STARRY HOLE</span>
+        </div>
+        <div class="top-actions">
+            <button class="text-btn" onclick="toggleBreathOverlay()">呼吸</button>
+            <button class="text-btn" onclick="toggleFirstAid()">急救箱</button>
+            <button class="text-btn" onclick="toggleSafetyPanel()">安全</button>
+            <button class="text-btn" onclick="toggleStarJar()">星罐</button>
+        </div>
+    </div>
+
+    <!-- 欢迎区域 -->
+    <div class="welcome-section fade-in" id="welcomeSection">
+        <h1>今夜，星星在听</h1>
+        <p>你的一切情绪，都值得被温柔收留</p>
+
+        <!-- 倾诉模式切换 -->
+        <div class="mode-toggle" style="margin-top: 16px;">
+            <span>🌙 倾听模式</span>
+            <div class="mode-switch" id="modeSwitch" onclick="toggleMode()"></div>
+            <span>💡 建议模式</span>
+        </div>
+
+        <div class="mood-selector" style="justify-content: center; margin-top: 20px;">
+            <div class="mood-chip" onclick="setMood('sad', this)">🌧️ 有些低落</div>
+            <div class="mood-chip" onclick="setMood('anxious', this)">🌀 心绪不宁</div>
+            <div class="mood-chip" onclick="setMood('calm', this)">🌙 想安静聊聊</div>
+            <div class="mood-chip" onclick="setMood('happy', this)">✨ 有开心的事</div>
+        </div>
+    </div>
+
+    <!-- 对话区域 -->
+    <div class="chat-area" id="chatArea"></div>
+
+    <!-- 输入区域 -->
+    <div class="input-area">
+        <!-- 快速倾诉面板 -->
+        <div class="quick-vent" id="quickVent">
+            <div class="quick-vent-title">⚡ 快速倾诉 — 不想打字也没关系</div>
+            <div class="quick-emojis" id="quickEmojis">
+                <div class="quick-emoji" onclick="selectQuickEmoji(this, '😢')">😢</div>
+                <div class="quick-emoji" onclick="selectQuickEmoji(this, '😰')">😰</div>
+                <div class="quick-emoji" onclick="selectQuickEmoji(this, '😔')">😔</div>
+                <div class="quick-emoji" onclick="selectQuickEmoji(this, '😤')">😤</div>
+                <div class="quick-emoji" onclick="selectQuickEmoji(this, '🥱')">🥱</div>
+                <div class="quick-emoji" onclick="selectQuickEmoji(this, '😊')">😊</div>
+                <div class="quick-emoji" onclick="selectQuickEmoji(this, '🥰')">🥰</div>
+            </div>
+            <div class="quick-tags" id="quickTags">
+                <div class="quick-tag" onclick="selectQuickTag(this)">工作压力</div>
+                <div class="quick-tag" onclick="selectQuickTag(this)">感情困惑</div>
+                <div class="quick-tag" onclick="selectQuickTag(this)">想念某人</div>
+                <div class="quick-tag" onclick="selectQuickTag(this)">对未来的迷茫</div>
+                <div class="quick-tag" onclick="selectQuickTag(this)">觉得自己不够好</div>
+                <div class="quick-tag" onclick="selectQuickTag(this)">太累了</div>
+                <div class="quick-tag" onclick="selectQuickTag(this)">失眠</div>
+            </div>
+            <button class="quick-submit" onclick="submitQuickVent()">送入星空</button>
+        </div>
+
+        <div class="input-row">
+            <div class="input-wrapper">
+                <textarea id="messageInput"
+                    placeholder="把心事写在这里，星星会替你保管..."
+                    rows="1"
+                    onkeydown="handleKeyDown(event)"
+                    oninput="autoResize(this)"></textarea>
+            </div>
+            <button class="send-btn" onclick="sendMessage()" title="发送">✦</button>
+        </div>
+        <div class="toolbar">
+            <div class="tool-chip" onclick="toggleQuickVent(this)">⚡ 快速倾诉</div>
+            <div class="tool-chip" onclick="toggleVoiceInput(this)">🎙️ 语音输入</div>
+            <div class="tool-chip" onclick="toggleNoisePanel()">🎵 白噪音</div>
+            <div class="tool-chip" onclick="readAloud()">🔊 朗读</div>
+            <div class="tool-chip" onclick="collectStar()">⭐ 存入星罐</div>
+        </div>
+    </div>
+</div>
+
+<!-- 遮罩 -->
+<div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
+
+<!-- 情绪急救箱面板 -->
+<div class="firstaid-panel" id="firstaidPanel">
+    <div class="panel-header">
+        <h2>🩹 情绪急救箱</h2>
+        <button class="icon-btn" onclick="toggleFirstAid()">✕</button>
+    </div>
+    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:20px; line-height:1.7;">
+        情绪来了不用怕，选一个适合此刻的小活动，1-3分钟就能让自己舒服一些。
+    </p>
+    <div class="firstaid-categories">
+        <div class="firstaid-cat" onclick="doFirstAid('comfort')">
+            <div class="firstaid-cat-icon">🤗</div>
+            <div class="firstaid-cat-title">安慰自己</div>
+            <div class="firstaid-cat-desc">对自己说三句温柔的话，像对待最好的朋友那样</div>
+        </div>
+        <div class="firstaid-cat" onclick="doFirstAid('breathe')">
+            <div class="firstaid-cat-icon">🌬️</div>
+            <div class="firstaid-cat-title">深呼吸放松</div>
+            <div class="firstaid-cat-desc">跟着星空呼吸动画，4秒吸气、7秒呼气</div>
+        </div>
+        <div class="firstaid-cat" onclick="doFirstAid('doodle')">
+            <div class="firstaid-cat-icon">🎨</div>
+            <div class="firstaid-cat-title">涂鸦释放</div>
+            <div class="firstaid-cat-desc">随便画几笔，把情绪从指尖流出去</div>
+        </div>
+        <div class="firstaid-cat" onclick="doFirstAid('distract')">
+            <div class="firstaid-cat-icon">🌌</div>
+            <div class="firstaid-cat-title">数星星</div>
+            <div class="firstaid-cat-desc">安静地看30秒星空，让大脑切换频道</div>
+        </div>
+        <div class="firstaid-cat" onclick="doFirstAid('gratitude')">
+            <div class="firstaid-cat-icon">🙏</div>
+            <div class="firstaid-cat-title">三件小事</div>
+            <div class="firstaid-cat-desc">想想今天有没有三件微小但还不错的事</div>
+        </div>
+        <div class="firstaid-cat" onclick="doFirstAid('grounding')">
+            <div class="firstaid-cat-icon">🧊</div>
+            <div class="firstaid-cat-title">5-4-3-2-1 回到当下</div>
+            <div class="firstaid-cat-desc">用感官把自己拉回此刻：5样看到的、4样摸到的...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 星空呼吸全屏 -->
+<div class="breath-overlay" id="breathOverlay">
+    <div class="breath-circle" id="breathCircle">吸气</div>
+    <p style="font-size:13px; color:var(--text-secondary); letter-spacing:2px;" id="breathHint">
+        跟着圆圈，慢慢来
+    </p>
+    <button class="breath-close" onclick="stopBreathing()">回到星洞</button>
+</div>
+
+<!-- 涂鸦面板 -->
+<div class="doodle-overlay" id="doodleOverlay">
+    <div class="doodle-toolbar">
+        <div class="doodle-color active" style="background:#f5c26b" onclick="setDoodleColor(this, '#f5c26b')"></div>
+        <div class="doodle-color" style="background:#7eb8da" onclick="setDoodleColor(this, '#7eb8da')"></div>
+        <div class="doodle-color" style="background:#8b7eb8" onclick="setDoodleColor(this, '#8b7eb8')"></div>
+        <div class="doodle-color" style="background:#7edaa0" onclick="setDoodleColor(this, '#7edaa0')"></div>
+        <div class="doodle-color" style="background:#e8e0d4" onclick="setDoodleColor(this, '#e8e0d4')"></div>
+        <button class="tool-chip" onclick="clearDoodle()" style="margin-left:auto;">清除</button>
+        <button class="tool-chip" onclick="closeDoodle()">完成</button>
+    </div>
+    <canvas class="doodle-canvas" id="doodleCanvas"></canvas>
+</div>
+
+<!-- 情绪星罐面板 -->
+<div class="star-jar-panel" id="starJarPanel">
+    <div class="panel-header">
+        <h2>✦ 情绪星罐</h2>
+        <button class="icon-btn" onclick="toggleStarJar()">✕</button>
+    </div>
+    <div class="star-count">
+        你已收集了 <strong id="starCountNum">0</strong> 颗星星
+    </div>
+    <div class="jar-container" id="jarContainer"></div>
+    <p style="text-align:center; font-size:12px; color:var(--text-secondary); letter-spacing:1px;">
+        每一次谈心，都是夜空中的一颗星<br>点击星星，回忆那段心事
+    </p>
+
+    <!-- 情绪画像 -->
+    <div class="mood-chart-section" id="moodChartSection">
+        <div class="mood-chart-title">✦ 你的情绪星座</div>
+        <div class="mood-chart-bars" id="moodChartBars"></div>
+        <div style="display:flex; gap:20px; justify-content:center;">
+            <div class="mood-bar-label">🌧️ 难过</div>
+            <div class="mood-bar-label">🌀 焦虑</div>
+            <div class="mood-bar-label">🌙 平静</div>
+            <div class="mood-bar-label">✨ 开心</div>
+        </div>
+    </div>
+</div>
+
+<!-- 白噪音面板 -->
+<div class="noise-panel" id="noisePanel">
+    <div class="panel-header">
+        <h2 style="font-size:16px; letter-spacing:3px;">🎵 白噪音</h2>
+        <button class="icon-btn" onclick="toggleNoisePanel()">✕</button>
+    </div>
+    <div class="noise-item">
+        <div><span class="noise-icon">🌧️</span><span class="noise-label">深夜雨声</span></div>
+        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('rain', this.value)">
+    </div>
+    <div class="noise-item">
+        <div><span class="noise-icon">🍃</span><span class="noise-label">晚风拂面</span></div>
+        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('wind', this.value)">
+    </div>
+    <div class="noise-item">
+        <div><span class="noise-icon">🌌</span><span class="noise-label">星空静音</span></div>
+        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('space', this.value)">
+    </div>
+    <div class="noise-item">
+        <div><span class="noise-icon">🔥</span><span class="noise-label">壁炉轻响</span></div>
+        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('fire', this.value)">
+    </div>
+</div>
+
+<!-- 安全设置面板 -->
+<div class="safety-panel" id="safetyPanel">
+    <div class="panel-header">
+        <h2>🛡️ 隐私与安全</h2>
+        <button class="icon-btn" onclick="toggleSafetyPanel()">✕</button>
+    </div>
+    <div class="safety-section">
+        <h3>匿名承诺</h3>
+        <p>这里不需要注册、不需要登录。你的所有对话仅保存在当前浏览器本地，不会上传到任何服务器。你是完全匿名的。</p>
+    </div>
+    <div class="safety-section">
+        <h3>数据存储</h3>
+        <p>所有数据使用浏览器 localStorage 存储，仅存在于你的设备上。没有任何第三方可以访问。</p>
+    </div>
+    <div class="safety-section">
+        <h3>自动过期（化为星尘）</h3>
+        <p>超过7天的对话记录会自动"化为星尘"悄然消失，你不需要纠结"要不要删"。</p>
+        <p class="expire-info" id="expireInfo"></p>
+    </div>
+    <div class="safety-section">
+        <h3>一键销毁</h3>
+        <p>如果需要，你可以立刻彻底清除所有对话记录和情绪星罐。此操作不可恢复。</p>
+        <button class="danger-btn" id="destroyBtn" onclick="destroyAllData()">🗑️ 销毁所有记录</button>
+    </div>
+    <div class="safety-section">
+        <h3>关于星洞</h3>
+        <p>星洞是一个免费、私密的情绪陪伴空间。没有广告、没有会员、没有充值。只为在深夜给你一个温柔的出口。</p>
+    </div>
+</div>
+
+<!-- 打字指示器 -->
+<div class="typing-indicator" id="typingIndicator">
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+</div>
+
+<script>
+    // ============================================
+    //  星洞 v2.0 · 核心逻辑
+    //  新增8大功能模块
+    // ============================================
+
+    // ---------- 全局状态 ----------
+    let currentMood = 'calm';
+    let chatMode = 'listen';     // 'listen'(倾听) / 'suggest'(建议)
+    let messages = [];
+    let stars = [];
+    let isRecording = false;
+    let recognition = null;
+    let noiseAudioContext = null;
+    let noiseNodes = {};
+    let breathTimer = null;
+    let doodleCtx = null;
+
+    // 快速倾诉选择
+    let quickEmoji = '';
+    let quickTag = '';
+
+    // 认知引导卡片模板（CBT轻量版）
+    const cognitiveTemplates = [
+        {
+            hint: '也许换个角度看，这件事没那么糟？',
+            detail: '当我们情绪低落时，大脑会自动"放大"坏事。试试问自己：这件事在一年后还重要吗？最坏的情况真的会发生吗？有时候不是事情本身难，而是我们站在了太近的地方看它。'
+        },
+        {
+            hint: '你注意到了吗？你一直在苛责自己。',
+            detail: '如果朋友遇到同样的事，你会这样对朋友说话吗？大概率不会。那为什么要把最苛刻的话留给自己呢？试着用对朋友的方式对自己说一次，也许你会发现，你已经做得很好了。'
+        },
+        {
+            hint: '不是所有问题都需要现在解决。',
+            detail: '有些夜晚不需要找到答案，只需要允许自己暂时放下。就像一片落叶，不是你伸手去接它，而是让它自然飘落。今夜先休息，明天精力充沛了再想也不迟。'
+        },
+        {
+            hint: '此刻的难受，是暂时的。',
+            detail: '情绪像天气，阴天总会转晴。你现在感受到的一切——难过、焦虑、孤独——它们会来，也一定会走。你只需要陪着它们度过这一刻，不需要着急赶走谁。'
+        }
+    ];
+
+    // 危机关键词
+    const crisisKeywords = ['死', '自杀', '轻生', '不想活', '跳楼', '割腕', '了结', '结束生命', '活不下去', '自杀'];
+
+    // ---------- 初始化 ----------
+    window.addEventListener('DOMContentLoaded', () => {
+        initStarCanvas();
+        loadFromStorage();
+        expireOldMessages();
+        renderChatHistory();
+        renderStarJar();
+        renderMoodChart();
+        updateExpireInfo();
+        initSpeechRecognition();
+        initDoodleCanvas();
+
+        if (messages.length === 0) {
+            setTimeout(() => {
+                addAIMessage('你好呀，夜深了。\n\n我是星洞里的倾听者，没有名字，只是一颗愿意陪你到天亮的星星。\n\n不用拘束，想说什么都可以。开心的事，难过的事，或者只是想安静地待一会儿，我都在。');
+            }, 1500);
+        }
+    });
+
+    // ============================================
+    //  流星坠落星空
+    // ============================================
+    let canvasCtx;
+    let bgStars = [];
+    let meteors = [];
+    const BG_STAR_COUNT = 50;
+    const MAX_METEORS = 20;
+
+    function initStarCanvas() {
+        const canvas = document.getElementById('starCanvas');
+        canvasCtx = canvas.getContext('2d');
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initBgStars();
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        animateStars();
+    }
+
+    function initBgStars() {
+        const canvas = document.getElementById('starCanvas');
+        bgStars = [];
+        for (let i = 0; i < BG_STAR_COUNT; i++) {
+            bgStars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 1.0 + 0.2,
+                alpha: Math.random() * 0.4 + 0.1,
+                phase: Math.random() * Math.PI * 2,
+                speed: Math.random() * 0.003 + 0.001
+            });
+        }
+    }
+
+    function createMeteor() {
+        const canvas = document.getElementById('starCanvas');
+        const startX = Math.random() * canvas.width * 1.4 - canvas.width * 0.2;
+        const startY = -Math.random() * canvas.height * 0.5;
+        const angle = (40 + Math.random() * 35) * Math.PI / 180;
+        const speed = 4 + Math.random() * 6;
+        return {
+            x: startX, y: startY,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            length: 100 + Math.random() * 160,
+            width: 1.0 + Math.random() * 2.0,
+            alpha: 0.7 + Math.random() * 0.3,
+            life: 1.0,
+            decay: 0.001 + Math.random() * 0.003,
+            hue: Math.random() > 0.5 ? 38 : 210
+        };
+    }
+
+    function animateStars() {
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvasCtx;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const moodConfig = {
+            sad:    { bgAlpha: 0.25, meteorRate: 0.06, meteorSpeed: 0.6, tailFade: 0.5, bgGradient: ['#0a0e1a', '#12102a'] },
+            anxious:{ bgAlpha: 0.4,  meteorRate: 0.10, meteorSpeed: 1.4, tailFade: 0.8, bgGradient: ['#0a0e1a', '#0a1820'] },
+            calm:   { bgAlpha: 0.3,  meteorRate: 0.08, meteorSpeed: 0.8, tailFade: 0.6, bgGradient: ['#0a0e1a', '#111832'] },
+            happy:  { bgAlpha: 0.6,  meteorRate: 0.12, meteorSpeed: 1.2, tailFade: 0.9, bgGradient: ['#0a0e1a', '#1a1832'] }
+        };
+        const cfg = moodConfig[currentMood] || moodConfig.calm;
+        const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height*0.3, 0, canvas.width/2, canvas.height*0.3, canvas.width*0.8);
+        gradient.addColorStop(0, cfg.bgGradient[1]);
+        gradient.addColorStop(1, cfg.bgGradient[0]);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const time = Date.now() * 0.001;
+        bgStars.forEach(s => {
+            const flicker = Math.sin(time * s.speed * 200 + s.phase);
+            const a = s.alpha * cfg.bgAlpha * (0.5 + 0.5 * flicker);
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(210, 40%, 85%, ${a})`;
+            ctx.fill();
+        });
+        if (meteors.length < MAX_METEORS && Math.random() < cfg.meteorRate) {
+            meteors.push(createMeteor());
+        }
+        meteors.forEach(m => {
+            m.x += m.vx * cfg.meteorSpeed;
+            m.y += m.vy * cfg.meteorSpeed;
+            m.life -= m.decay;
+            if (m.life <= 0) return;
+            const alpha = m.alpha * m.life * cfg.tailFade;
+            const speed = Math.sqrt(m.vx*m.vx + m.vy*m.vy);
+            const tailX = m.x - (m.vx / speed) * m.length * m.life;
+            const tailY = m.y - (m.vy / speed) * m.length * m.life;
+            const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+            grad.addColorStop(0, `hsla(${m.hue}, 70%, 85%, ${alpha})`);
+            grad.addColorStop(0.3, `hsla(${m.hue}, 60%, 75%, ${alpha * 0.5})`);
+            grad.addColorStop(1, `hsla(${m.hue}, 50%, 70%, 0)`);
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(tailX, tailY);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = m.width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, m.width * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${m.hue}, 60%, 92%, ${alpha * 0.8})`;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, m.width * 6, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${m.hue}, 50%, 85%, ${alpha * 0.2})`;
+            ctx.fill();
+        });
+        meteors = meteors.filter(m => m.life > 0);
+        requestAnimationFrame(animateStars);
+    }
+
+    // ============================================
+    //  功能1：倾诉模式切换（倾听 / 建议）
+    // ============================================
+    function toggleMode() {
+        chatMode = chatMode === 'listen' ? 'suggest' : 'listen';
+        document.getElementById('modeSwitch').classList.toggle('active', chatMode === 'suggest');
+        // 在对话中提示模式切换
+        if (chatMode === 'suggest') {
+            addSystemMessage('已切换为「建议模式」——我会试着给你一些想法，但永远不会强迫你接受。');
+        } else {
+            addSystemMessage('已切换回「倾听模式」——我只听，不打扰。');
+        }
+    }
+
+    function addSystemMessage(text) {
+        const chatArea = document.getElementById('chatArea');
+        const banner = document.createElement('div');
+        banner.className = 'brave-banner';
+        banner.textContent = text;
+        chatArea.appendChild(banner);
+        scrollToBottom();
+    }
+
+    // ============================================
+    //  功能2：认知引导卡片（CBT）
+    // ============================================
+    function maybeShowCognitiveCard(userText) {
+        // 20%概率在用户倾诉后显示（不打扰）
+        if (Math.random() > 0.2) return;
+        // 随机选择一个模板
+        const tpl = cognitiveTemplates[Math.floor(Math.random() * cognitiveTemplates.length)];
+        const chatArea = document.getElementById('chatArea');
+        const card = document.createElement('div');
+        card.className = 'cognitive-card';
+        card.onclick = () => card.classList.toggle('expanded');
+        card.innerHTML = `
+            <span>${tpl.hint}</span>
+            <span class="card-toggle"></span>
+            <div class="card-detail">${tpl.detail}</div>
+        `;
+        chatArea.appendChild(card);
+        scrollToBottom();
+    }
+
+    // ============================================
+    //  功能3：危机检测安全兜底
+    // ============================================
+    function checkCrisis(text) {
+        return crisisKeywords.some(k => text.includes(k));
+    }
+
+    function showCrisisCard() {
+        const chatArea = document.getElementById('chatArea');
+        const card = document.createElement('div');
+        card.className = 'crisis-card';
+        card.innerHTML = `
+            我注意到你说了一些让我很担心的话。<br><br>
+            我只是一颗星星，能力有限。<br>
+            但有很多人，专门擅长在深夜接住这些沉重。<br><br>
+            <a class="hotline" href="tel:4001619995">✦ 24小时心理援助热线 400-161-9995</a><br>
+            <a class="hotline" href="tel:01082951332" style="margin-top:6px; display:inline-block;">✦ 北京心理危机干预 010-82951332</a><br>
+            <a class="hotline" href="tel:12320" style="margin-top:6px; display:inline-block;">✦ 卫生热线 12320</a>
+        `;
+        chatArea.appendChild(card);
+        scrollToBottom();
+    }
+
+    // ============================================
+    //  功能4：快速倾诉（零文字输入）
+    // ============================================
+    function toggleQuickVent(btn) {
+        const panel = document.getElementById('quickVent');
+        panel.classList.toggle('show');
+        btn.classList.toggle('active');
+    }
+
+    function selectQuickEmoji(el, emoji) {
+        document.querySelectorAll('.quick-emoji').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+        quickEmoji = emoji;
+    }
+
+    function selectQuickTag(el) {
+        document.querySelectorAll('.quick-tag').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+        quickTag = el.textContent;
+    }
+
+    function submitQuickVent() {
+        if (!quickEmoji) return;
+        const welcome = document.getElementById('welcomeSection');
+        if (welcome) welcome.style.display = 'none';
+
+        // 构建快速倾诉文本
+        let ventText = quickEmoji + ' ';
+        if (quickTag) ventText += quickTag;
+        else ventText += '（说不出来的情绪）';
+
+        addUserMessage(ventText);
+        quickEmoji = '';
+        quickTag = '';
+        document.querySelectorAll('.quick-emoji').forEach(e => e.classList.remove('selected'));
+        document.querySelectorAll('.quick-tag').forEach(e => e.classList.remove('selected'));
+
+        // 正向反馈
+        setTimeout(() => {
+            addSystemMessage('✦ 你已经很勇敢了');
+        }, 800);
+
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            const reply = generateLocalReply(ventText);
+            addAIMessage(reply);
+            maybeShowCognitiveCard(ventText);
+        }, 1500 + Math.random() * 1500);
+    }
+
+    // ============================================
+    //  功能5：情绪急救箱
+    // ============================================
+    function toggleFirstAid() {
+        const panel = document.getElementById('firstaidPanel');
+        const overlay = document.getElementById('overlay');
+        panel.classList.toggle('open');
+        overlay.classList.toggle('show', panel.classList.contains('open'));
+    }
+
+    function doFirstAid(type) {
+        closeAllPanels();
+        switch(type) {
+            case 'comfort':
+                startComfortActivity();
+                break;
+            case 'breathe':
+                toggleBreathOverlay();
+                break;
+            case 'doodle':
+                openDoodle();
+                break;
+            case 'distract':
+                startDistractActivity();
+                break;
+            case 'gratitude':
+                startGratitudeActivity();
+                break;
+            case 'grounding':
+                startGroundingActivity();
+                break;
+        }
+    }
+
+    // 安慰自己活动
+    function startComfortActivity() {
+        const comforts = [
+            '你现在辛苦了，能撑到深夜已经很了不起了。',
+            '你不需要完美，不需要时刻坚强。允许自己脆弱，也是一种勇敢。',
+            '不管今天发生了什么，你都是值得被爱的。'
+        ];
+        const text = comforts.join('\n\n');
+        addAIMessage('🤗 想试试对自己温柔一点吗？慢慢读下面这几句话：\n\n' + text + '\n\n如果愿意，可以挑一句对自己说出口。');
+    }
+
+    // 数星星活动
+    function startDistractActivity() {
+        addAIMessage('🌌 现在，试着放下手机，安静地看30秒窗外的夜空（或者看屏幕上的流星）。\n\n什么都不想，只是看着。\n\n30秒后回来告诉我，感觉怎么样？');
+    }
+
+    // 三件小事
+    function startGratitudeActivity() {
+        addAIMessage('🙏 想想今天，有没有三件微小但还不错的事？不用很隆重，比如：\n\n· 喝到了一杯温度刚好的水\n· 路上看到一只猫\n· 某首歌的旋律刚好戳中了心情\n\n不用回答我，只是在心里想一想就好。');
+    }
+
+    // 5-4-3-2-1 回到当下
+    function startGroundingActivity() {
+        addAIMessage('🧊 我们来做一个5-4-3-2-1练习，帮你回到此刻：\n\n抬头看看，说出你看到的 **5样东西**。\n然后是 **4样你能摸到的**。\n再是 **3样听到的声音**。\n接着是 **2样闻到的气味**。\n最后是 **1件你可以尝到的**。\n\n不急，慢慢来。');
+    }
+
+    // ============================================
+    //  功能6：星空呼吸动画（倒计时模式）
+    // ============================================
+    function toggleBreathOverlay() {
+        const overlay = document.getElementById('breathOverlay');
+        overlay.classList.add('show');
+        startBreathing();
+    }
+
+    function startBreathing() {
+        const circle = document.getElementById('breathCircle');
+        const hint = document.getElementById('breathHint');
+
+        // 呼吸参数
+        const INHALE_SECONDS = 4;
+        const HOLD_SECONDS = 2;
+        const EXHALE_SECONDS = 6;
+
+        let countdown = INHALE_SECONDS;
+        let phase = 'inhale'; // inhale → hold → exhale → loop
+
+        function tick() {
+            // 倒计时结束，切换阶段
+            if (countdown <= 0) {
+                if (phase === 'inhale') {
+                    phase = 'hold';
+                    countdown = HOLD_SECONDS;
+                    circle.className = 'breath-circle inhale';
+                } else if (phase === 'hold') {
+                    phase = 'exhale';
+                    countdown = EXHALE_SECONDS;
+                    circle.className = 'breath-circle exhale';
+                } else {
+                    phase = 'inhale';
+                    countdown = INHALE_SECONDS;
+                    circle.className = 'breath-circle inhale';
+                }
+            }
+
+            // 更新显示
+            const phaseNames = { inhale: '吸气', hold: '屏住', exhale: '呼气' };
+            circle.textContent = `${phaseNames[phase]} ${countdown}`;
+            hint.textContent = phase === 'inhale' ? '跟着圆圈，慢慢吸气...'
+                           : phase === 'hold' ? '轻轻地，保持...'
+                           : '慢慢地，呼出去...';
+
+            countdown--;
+        }
+
+        // 立即显示第一次
+        circle.className = 'breath-circle inhale';
+        circle.textContent = `吸气 ${INHALE_SECONDS}`;
+        hint.textContent = '跟着圆圈，慢慢吸气...';
+        countdown = INHALE_SECONDS - 1;
+
+        // 每秒倒计时
+        breathTimer = setInterval(tick, 1000);
+    }
+
+    function stopBreathing() {
+        if (breathTimer) { clearInterval(breathTimer); breathTimer = null; }
+        document.getElementById('breathOverlay').classList.remove('show');
+    }
+
+    // ============================================
+    //  功能7：涂鸦释放
+    // ============================================
+    function initDoodleCanvas() {
+        const canvas = document.getElementById('doodleCanvas');
+        doodleCtx = canvas.getContext('2d');
+        let drawing = false;
+        let color = '#f5c26b';
+
+        function resizeDoodle() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 60;
+        }
+        resizeDoodle();
+        window.addEventListener('resize', resizeDoodle);
+
+        // 鼠标事件
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            doodleCtx.beginPath();
+            doodleCtx.moveTo(e.offsetX, e.offsetY);
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            doodleCtx.strokeStyle = color;
+            doodleCtx.lineWidth = 3;
+            doodleCtx.lineCap = 'round';
+            doodleCtx.lineJoin = 'round';
+            doodleCtx.lineTo(e.offsetX, e.offsetY);
+            doodleCtx.stroke();
+        });
+        canvas.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('mouseleave', () => drawing = false);
+
+        // 触摸事件
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            drawing = true;
+            const t = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            doodleCtx.beginPath();
+            doodleCtx.moveTo(t.clientX - rect.left, t.clientY - rect.top);
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!drawing) return;
+            const t = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            doodleCtx.strokeStyle = color;
+            doodleCtx.lineWidth = 3;
+            doodleCtx.lineCap = 'round';
+            doodleCtx.lineJoin = 'round';
+            doodleCtx.lineTo(t.clientX - rect.left, t.clientY - rect.top);
+            doodleCtx.stroke();
+        });
+        canvas.addEventListener('touchend', () => drawing = false);
+
+        // 暴露颜色设置方法
+        window.setDoodleColorInternal = (c) => { color = c; };
+    }
+
+    function setDoodleColor(el, color) {
+        document.querySelectorAll('.doodle-color').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        window.setDoodleColorInternal(color);
+    }
+
+    function clearDoodle() {
+        const canvas = document.getElementById('doodleCanvas');
+        doodleCtx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function openDoodle() {
+        document.getElementById('doodleOverlay').classList.add('show');
+    }
+
+    function closeDoodle() {
+        document.getElementById('doodleOverlay').classList.remove('show');
+        clearDoodle();
+        addAIMessage('🎨 画完了？感觉好些了吗？情绪不需要好看，只需要流出来。');
+    }
+
+    // ============================================
+    //  功能8：自动过期（7天化为星尘）
+    // ============================================
+    function expireOldMessages() {
+        const now = Date.now();
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+        // 给每条消息添加时间戳（如果没有的话）
+        messages = messages.filter(msg => {
+            if (!msg.timestamp) {
+                msg.timestamp = now;
+                return true;
+            }
+            return (now - msg.timestamp) < SEVEN_DAYS;
+        });
+
+        stars = stars.filter(s => {
+            if (!s.timestamp) s.timestamp = now;
+            return (now - s.timestamp) < SEVEN_DAYS;
+        });
+
+        saveToStorage();
+    }
+
+    function updateExpireInfo() {
+        const oldest = messages.length > 0 ? messages[0].timestamp : null;
+        const infoEl = document.getElementById('expireInfo');
+        if (oldest) {
+            const daysLeft = Math.max(0, 7 - Math.floor((Date.now() - oldest) / (24*60*60*1000)));
+            infoEl.textContent = `最早的记录将在 ${daysLeft} 天后化为星尘`;
+        } else {
+            infoEl.textContent = '暂无记录';
+        }
+    }
+
+    // ============================================
+    //  情绪画像可视化
+    // ============================================
+    function renderMoodChart() {
+        const container = document.getElementById('moodChartBars');
+        if (!container) return;
+
+        // 统计各情绪出现次数
+        const moodCounts = { sad: 0, anxious: 0, calm: 0, happy: 0 };
+        messages.forEach(msg => {
+            if (msg.mood && moodCounts[msg.mood] !== undefined) {
+                moodCounts[msg.mood]++;
+            }
+        });
+
+        const max = Math.max(1, ...Object.values(moodCounts));
+        const colors = { sad: '#8b7eb8', anxious: '#7eb8da', calm: '#a0b8d0', happy: '#ffd700' };
+
+        container.innerHTML = '';
+        Object.entries(moodCounts).forEach(([mood, count]) => {
+            const bar = document.createElement('div');
+            bar.className = 'mood-bar';
+            const height = Math.max(4, (count / max) * 70);
+            bar.style.height = height + 'px';
+            bar.style.background = colors[mood];
+            bar.title = `${mood}: ${count}次`;
+            container.appendChild(bar);
+        });
+    }
+
+    // ============================================
+    //  情绪系统
+    // ============================================
+    function setMood(mood, el) {
+        currentMood = mood;
+        document.querySelectorAll('.mood-chip').forEach(c => c.classList.remove('selected'));
+        if (el) el.classList.add('selected');
+        spawnEmotionSparkles(mood);
+
+        // 隐藏欢迎区域
+        const welcome = document.getElementById('welcomeSection');
+        if (welcome) welcome.style.display = 'none';
+
+        // 查找该情绪的最后一条用户消息，滚动到该位置并高亮
+        let targetMsg = null;
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'user' && messages[i].mood === mood) {
+                targetMsg = messages[i];
+                break;
+            }
+        }
+
+        if (targetMsg && targetMsg.msgId) {
+            // 清除之前的高亮
+            document.querySelectorAll('.letter.star-highlight').forEach(l => l.classList.remove('star-highlight'));
+            // 找到对应DOM并滚动高亮
+            const target = document.querySelector(`[data-msg-id="${targetMsg.msgId}"]`);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('star-highlight');
+                setTimeout(() => target.classList.remove('star-highlight'), 3000);
+            }
+        }
+
+        const moodResponses = {
+            sad: '夜色有些沉，星星也在为你安静着。慢慢说，不着急，我在这里。',
+            anxious: '感觉心绪像风中的星星一样乱？没关系，让我们慢慢把它们一颗颗理清楚。',
+            calm: '这样安静的夜晚，最适合把心里的话轻轻放出来。我听着呢。',
+            happy: '你的开心让星星都亮了起来呢。快说说，是什么好事？'
+        };
+
+        if (messages.length > 0) {
+            addAIMessage(moodResponses[mood] || moodResponses.calm);
+        }
+        saveToStorage();
+    }
+
+    function spawnEmotionSparkles(mood) {
+        const colors = { sad: '#8b7eb8', anxious: '#7eb8da', calm: '#a0b8d0', happy: '#ffd700' };
+        for (let i = 0; i < 12; i++) {
+            setTimeout(() => {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'emotion-sparkle';
+                sparkle.textContent = mood === 'happy' ? '✦' : '·';
+                sparkle.style.left = Math.random() * 80 + 10 + '%';
+                sparkle.style.top = Math.random() * 60 + 20 + '%';
+                sparkle.style.color = colors[mood] || '#f5c26b';
+                sparkle.style.fontSize = (Math.random() * 12 + 8) + 'px';
+                document.body.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 2000);
+            }, i * 150);
+        }
+    }
+
+    // ============================================
+    //  对话系统
+    // ============================================
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const welcome = document.getElementById('welcomeSection');
+        if (welcome) welcome.style.display = 'none';
+
+        addUserMessage(text);
+        input.value = '';
+        autoResize(input);
+
+        // 危机检测
+        if (checkCrisis(text)) {
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                addAIMessage('我听到了。你说出这些，本身就需要很大的勇气。');
+                showCrisisCard();
+            }, 2000);
+            return;
+        }
+
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            const reply = generateLocalReply(text);
+            addAIMessage(reply);
+            maybeShowCognitiveCard(text);
+        }, 1500 + Math.random() * 1500);
+    }
+
+    function generateLocalReply(userText) {
+        const text = userText.toLowerCase();
+
+        // 建议模式追加引导语
+        const suggestPrefix = chatMode === 'suggest' ?
+            '[建议模式] ' : '';
+
+        const emotionMap = {
+            sad: {
+                keywords: ['难过', '伤心', '哭', '失望', '累', '撑不住', '痛苦', '绝望', '不想', '受不了', '孤独', '崩溃', '好烦', '抑郁', '不开心', '心痛', '委屈', '无助'],
+                replies: [
+                    '我听到了。有些痛不需要被理解，只需要被听见。\n\n你想说就说，不想说也没关系，就这样安静地待着，也是一种陪伴。',
+                    '谢谢你愿意把这些告诉我。能在深夜对陌生人说出这些，本身就需要勇气。\n\n你的感受是真实的，不需要假装没事。',
+                    '有些夜晚就是会特别难熬。但请相信，这个夜晚会过去的，而你比想象中更坚强。\n\n如果愿意的话，再多说一点？我在认真听。',
+                    '我知道此刻你可能觉得自己很孤单。但请记住，愿意面对自己情绪的你，已经很了不起了。',
+                    '听到你说这些，我很心疼。虽然我只是星洞里的声音，但我想让你知道——你的每一份难过，都值得被认真对待。'
+                ],
+                suggestReplies: [
+                    '我听到了你的难过。如果愿意的话，我想轻轻说一句：也许现在最重要的不是"解决"，而是先允许自己难过一会儿。今晚先放过自己，好吗？',
+                    '谢谢你信任我。如果可以的话，试着做一个小小的改变——今晚睡前对自己说一句"今天辛苦了"。不需要更多，就这一句就够了。'
+                ]
+            },
+            anxious: {
+                keywords: ['焦虑', '紧张', '害怕', '担心', '压力', '失眠', '睡不着', '烦躁', '心慌', '恐惧', '不安', '怎么办', '迷茫'],
+                replies: [
+                    '焦虑的感觉像什么呢？像是心里有个不安的风暴？\n\n没关系，风暴总会停的。现在，试着和我一起慢慢呼吸——吸四秒，停两秒，呼六秒。',
+                    '你现在的心情我理解。焦虑的时候，整个世界都变得特别大，自己变得特别小。\n\n但此刻你只需要做一件事：就是现在这一刻。不用想太远。',
+                    '压力大了，就容易什么都往坏处想。但你知道吗？大部分我们担心的事，其实最后都没有发生。\n\n先喝口水，或者开一开白噪音，让自己先放松一下。',
+                    '有时候焦虑是因为我们太想掌控一切了。但有些事情，放一放，反而会慢慢好起来。'
+                ],
+                suggestReplies: [
+                    '我理解你的焦虑。也许可以试试这个：拿出一张纸，把脑子里所有担心的事都写下来。然后问自己——这些事，哪些是我现在能做的？哪些是只能等明天的？\n\n把"只能等明天"的划掉，今晚只看能做的。',
+                    '焦虑的时候，身体也会紧绷。试试这个：握紧拳头5秒，然后慢慢松开，重复三次。简单的肌肉放松有时候比深呼吸还管用。'
+                ]
+            },
+            happy: {
+                keywords: ['开心', '高兴', '快乐', '幸福', '好棒', '成功', '终于', '好消息', '兴奋', '哈哈', '满足', '感恩'],
+                replies: [
+                    '你的开心让我都想闪得更亮一些！快说说，发生了什么好事？\n\n快乐值得被大声说出来，也值得被记住。',
+                    '真好啊。能在深夜还带着笑意的人，一定是遇到了特别温暖的事。\n\n记住此刻的感觉，以后再难过的夜晚，它会变成你的星光。',
+                    '这份快乐，已经在你的情绪星罐里悄悄亮起了一颗新星。\n\n谢谢你把这份美好带到了星洞里。'
+                ],
+                suggestReplies: [
+                    '太好了！趁现在心情好，试着记住这个时刻——把它存进星罐，以后翻出来看看，会发现生活里亮闪闪的时刻其实比想象中多。'
+                ]
+            },
+            lonely: {
+                keywords: ['一个人', '没人', '没人懂', '没有人', '朋友', '寂寞', '孤单', '不被理解', '没人听', '社交'],
+                replies: [
+                    '深夜一个人的时候，确实容易觉得整个世界都安静了。\n\n但你不是一个人——至少此刻，星洞里有颗星星在认真地听你说话。',
+                    '很多人都在白天假装没事，只有在深夜才敢面对自己。你能来到这里，说明你在认真对待自己的感受，这很好。',
+                    '被理解是一种奢侈，不被理解才是常态。但至少，你可以先理解自己。'
+                ],
+                suggestReplies: [
+                    '孤单是深夜的常客，但不是永远的。也许明天可以试着联系一个很久没说话的朋友？不需要很隆重的开场白，一句"最近怎么样"就够了。'
+                ]
+            }
+        };
+
+        let matchedMood = null;
+        for (const [mood, data] of Object.entries(emotionMap)) {
+            if (data.keywords.some(k => text.includes(k))) {
+                matchedMood = mood;
+                break;
+            }
+        }
+
+        if (matchedMood) {
+            const data = emotionMap[matchedMood];
+            if (chatMode === 'suggest' && data.suggestReplies) {
+                return data.suggestReplies[Math.floor(Math.random() * data.suggestReplies.length)];
+            }
+            return data.replies[Math.floor(Math.random() * data.replies.length)];
+        }
+
+        const longText = text.length > 50;
+        if (longText) {
+            const longReplies = [
+                '你说了好多，我都认真看了。看来这件事在你心里积压了很久。\n\n能把这些都写出来，你一定舒坦了一些吧？没关系，继续说，我一直在。',
+                '谢谢你这么信任我，愿意说这么多。每一段文字背后，都是你真实的心声。\n\n我在这，慢慢地陪你把这些理一理。'
+            ];
+            return longReplies[Math.floor(Math.random() * longReplies.length)];
+        }
+
+        const generalReplies = [
+            '嗯，我听着呢。想继续说吗？还是想安静一会儿？',
+            '有时候不需要完整的句子，一个字、一个词，都是一种表达。我懂。',
+            '夜还长，不急。慢慢来，我在这里。',
+            '你说的话被星星记住了。如果想说更多，我一直都在。',
+            '深呼吸。感受一下夜空。今晚的星星特别亮，是不是？'
+        ];
+        return generalReplies[Math.floor(Math.random() * generalReplies.length)];
+    }
+
+    // ============================================
+    //  消息渲染
+    // ============================================
+    // 消息ID计数器
+    let msgIdCounter = 0;
+
+    function addUserMessage(text) {
+        const now = new Date();
+        const time = formatTime(now);
+        const msgId = ++msgIdCounter;
+        messages.push({ role: 'user', text, time, mood: currentMood, timestamp: Date.now(), msgId });
+
+        const chatArea = document.getElementById('chatArea');
+        const letter = document.createElement('div');
+        letter.className = 'letter user';
+        letter.setAttribute('data-msg-id', msgId);
+        letter.innerHTML = `<div>${escapeHTML(text).replace(/\n/g, '<br>')}</div><div class="letter-time">${time}</div>`;
+        chatArea.appendChild(letter);
+        scrollToBottom();
+        saveToStorage();
+    }
+
+    function addAIMessage(text) {
+        const now = new Date();
+        const time = formatTime(now);
+        const msgId = ++msgIdCounter;
+        messages.push({ role: 'ai', text, time, mood: currentMood, timestamp: Date.now(), msgId });
+
+        const chatArea = document.getElementById('chatArea');
+        const letter = document.createElement('div');
+        letter.className = 'letter ai';
+        letter.setAttribute('data-msg-id', msgId);
+        letter.innerHTML = `<div>${escapeHTML(text).replace(/\n/g, '<br>')}</div><div class="letter-time">${time} · 星洞倾听者</div>`;
+        chatArea.appendChild(letter);
+        scrollToBottom();
+        saveToStorage();
+    }
+
+    function renderChatHistory() {
+        const chatArea = document.getElementById('chatArea');
+        chatArea.innerHTML = '';
+        // 初始化msgIdCounter为最大已有值
+        msgIdCounter = 0;
+        messages.forEach(msg => {
+            if (!msg.msgId) msg.msgId = ++msgIdCounter;
+            else if (msg.msgId > msgIdCounter) msgIdCounter = msg.msgId;
+            const letter = document.createElement('div');
+            letter.className = `letter ${msg.role}`;
+            letter.setAttribute('data-msg-id', msg.msgId);
+            const timeStr = msg.time + (msg.role === 'ai' ? ' · 星洞倾听者' : '');
+            letter.innerHTML = `<div>${escapeHTML(msg.text).replace(/\n/g, '<br>')}</div><div class="letter-time">${timeStr}</div>`;
+            chatArea.appendChild(letter);
+        });
+        if (messages.length > 0) scrollToBottom();
+    }
+
+    // ============================================
+    //  UI 辅助
+    // ============================================
+    function showTyping() {
+        const chatArea = document.getElementById('chatArea');
+        const indicator = document.getElementById('typingIndicator');
+        chatArea.appendChild(indicator);
+        indicator.className = 'typing-indicator show';
+        scrollToBottom();
+    }
+    function hideTyping() {
+        document.getElementById('typingIndicator').className = 'typing-indicator';
+    }
+    function scrollToBottom() {
+        const chatArea = document.getElementById('chatArea');
+        setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 50);
+    }
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+    function handleKeyDown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    }
+    function formatTime(date) {
+        return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    }
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ============================================
+    //  情绪星罐
+    // ============================================
+    function collectStar() {
+        if (messages.length === 0) return;
+        const star = document.createElement('div');
+        star.className = 'star-collect';
+        star.textContent = '⭐';
+        star.style.left = '50%';
+        star.style.top = '50%';
+        document.body.appendChild(star);
+        setTimeout(() => star.remove(), 1200);
+
+        const lastMsg = messages[messages.length - 1];
+        stars.push({
+            id: Date.now(),
+            mood: lastMsg.mood || currentMood,
+            snippet: lastMsg.text.substring(0, 50),
+            time: formatTime(new Date()),
+            timestamp: Date.now(),
+            msgId: lastMsg.msgId || null,
+            x: Math.random() * 80 + 10,
+            y: Math.random() * 80 + 10
+        });
+        saveToStorage();
+        renderStarJar();
+        renderMoodChart();
+    }
+
+    function renderStarJar() {
+        const container = document.getElementById('jarContainer');
+        const countEl = document.getElementById('starCountNum');
+        container.innerHTML = '';
+        countEl.textContent = stars.length;
+        stars.forEach(star => {
+            const el = document.createElement('div');
+            el.className = 'jar-star';
+            el.textContent = star.mood === 'happy' ? '✦' : star.mood === 'sad' ? '☆' : '·';
+            el.style.left = star.x + '%';
+            el.style.top = star.y + '%';
+            el.style.animationDelay = Math.random() * 3 + 's';
+            const moodColors = { sad: '#8b7eb8', anxious: '#7eb8da', calm: '#a0b8d0', happy: '#ffd700' };
+            el.style.color = moodColors[star.mood] || '#f5c26b';
+            el.title = `${star.time} — ${star.snippet}`;
+            // 点击星星跳转到对应对话
+            el.addEventListener('click', () => {
+                if (star.msgId) {
+                    // 关闭星罐面板
+                    toggleStarJar();
+                    // 延迟一帧让面板动画启动
+                    setTimeout(() => {
+                        // 清除之前的高亮
+                        document.querySelectorAll('.letter.star-highlight').forEach(l => l.classList.remove('star-highlight'));
+                        // 找到对应消息
+                        const target = document.querySelector(`[data-msg-id="${star.msgId}"]`);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 高亮闪烁效果
+                            target.classList.add('star-highlight');
+                            setTimeout(() => target.classList.remove('star-highlight'), 3000);
+                        }
+                    }, 100);
+                }
+            });
+            container.appendChild(el);
+        });
+    }
+
+    // ============================================
+    //  面板切换
+    // ============================================
+    function toggleStarJar() {
+        document.getElementById('starJarPanel').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('show');
+    }
+    function toggleNoisePanel() {
+        document.getElementById('noisePanel').classList.toggle('open');
+    }
+    function toggleSafetyPanel() {
+        document.getElementById('safetyPanel').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('show');
+    }
+    function closeAllPanels() {
+        document.getElementById('starJarPanel').classList.remove('open');
+        document.getElementById('safetyPanel').classList.remove('open');
+        document.getElementById('firstaidPanel').classList.remove('open');
+        document.getElementById('noisePanel').classList.remove('open');
+        document.getElementById('overlay').classList.remove('show');
+    }
+
+    // ============================================
+    //  白噪音系统
+    // ============================================
+    function setNoise(type, value) {
+        const volume = value / 100;
+        if (volume === 0) {
+            if (noiseNodes[type]) noiseNodes[type].gain.gain.linearRampToValueAtTime(0, noiseAudioContext.currentTime + 0.5);
+            return;
+        }
+        if (!noiseAudioContext) noiseAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (noiseNodes[type]) {
+            noiseNodes[type].gain.gain.linearRampToValueAtTime(volume * 0.3, noiseAudioContext.currentTime + 0.3);
+            return;
+        }
+        const bufferSize = 2 * noiseAudioContext.sampleRate;
+        const buffer = noiseAudioContext.createBuffer(1, bufferSize, noiseAudioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+        const source = noiseAudioContext.createBufferSource();
+        source.buffer = buffer; source.loop = true;
+        const filter = noiseAudioContext.createBiquadFilter();
+        const configs = { rain: { type: 'bandpass', frequency: 8000, Q: 0.5 }, wind: { type: 'lowpass', frequency: 400, Q: 2 }, space: { type: 'highpass', frequency: 3000, Q: 0.3 }, fire: { type: 'bandpass', frequency: 600, Q: 1 } };
+        const config = configs[type] || configs.rain;
+        filter.type = config.type; filter.frequency.value = config.frequency; filter.Q.value = config.Q;
+        const gain = noiseAudioContext.createGain();
+        gain.gain.value = volume * 0.3;
+        source.connect(filter); filter.connect(gain); gain.connect(noiseAudioContext.destination);
+        source.start();
+        noiseNodes[type] = { source, filter, gain };
+    }
+
+    // ============================================
+    //  语音输入
+    // ============================================
+    function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN';
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) transcript += event.results[i][0].transcript;
+            document.getElementById('messageInput').value = transcript;
+            autoResize(document.getElementById('messageInput'));
+        };
+        recognition.onend = () => { isRecording = false; updateRecordingUI(); };
+    }
+
+    function toggleVoiceInput(btn) {
+        if (!recognition) { alert('您的浏览器暂不支持语音输入功能'); return; }
+        if (isRecording) { recognition.stop(); isRecording = false; }
+        else { recognition.start(); isRecording = true; }
+        updateRecordingUI();
+    }
+
+    function updateRecordingUI() {
+        // 找到语音输入按钮（第二个tool-chip，因为快速倾诉是第一个）
+        const chips = document.querySelectorAll('.tool-chip');
+        let voiceBtn = null;
+        chips.forEach(c => { if (c.textContent.includes('语音')) voiceBtn = c; });
+        if (!voiceBtn) return;
+        if (isRecording) { voiceBtn.innerHTML = '<span class="recording">●</span> 正在聆听...'; voiceBtn.classList.add('active'); }
+        else { voiceBtn.innerHTML = '🎙️ 语音输入'; voiceBtn.classList.remove('active'); }
+    }
+
+    // ============================================
+    //  朗读功能
+    // ============================================
+    function readAloud() {
+        const lastAIMsg = [...messages].reverse().find(m => m.role === 'ai');
+        if (!lastAIMsg) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(lastAIMsg.text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+            document.querySelectorAll('.letter.ai').forEach(l => l.classList.remove('reading'));
+            const allAIMsgs = document.querySelectorAll('.letter.ai');
+            if (allAIMsgs.length > 0) {
+                allAIMsgs[allAIMsgs.length - 1].classList.add('reading');
+                utterance.onend = () => allAIMsgs[allAIMsgs.length - 1].classList.remove('reading');
+            }
+        }
+    }
+
+    // ============================================
+    //  本地存储
+    // ============================================
+    function saveToStorage() {
+        try {
+            localStorage.setItem('starryhole_messages', JSON.stringify(messages));
+            localStorage.setItem('starryhole_stars', JSON.stringify(stars));
+            localStorage.setItem('starryhole_mood', currentMood);
+            localStorage.setItem('starryhole_mode', chatMode);
+        } catch (e) { console.warn('存储空间不足'); }
+    }
+
+    function loadFromStorage() {
+        try {
+            const m = localStorage.getItem('starryhole_messages');
+            const s = localStorage.getItem('starryhole_stars');
+            const mood = localStorage.getItem('starryhole_mood');
+            const mode = localStorage.getItem('starryhole_mode');
+            if (m) messages = JSON.parse(m);
+            if (s) stars = JSON.parse(s);
+            if (mood) currentMood = mood;
+            if (mode) {
+                chatMode = mode;
+                document.getElementById('modeSwitch').classList.toggle('active', chatMode === 'suggest');
+            }
+        } catch (e) { console.warn('读取本地存储失败'); }
+    }
+
+    // ============================================
+    //  一键销毁
+    // ============================================
+    let destroyConfirmStep = 0;
+    function destroyAllData() {
+        const btn = document.getElementById('destroyBtn');
+        if (destroyConfirmStep === 0) {
+            btn.textContent = '⚠️ 再次点击确认销毁所有数据';
+            btn.classList.add('confirm-state');
+            destroyConfirmStep = 1;
+            setTimeout(() => {
+                btn.textContent = '🗑️ 销毁所有记录';
+                btn.classList.remove('confirm-state');
+                destroyConfirmStep = 0;
+            }, 5000);
+        } else {
+            localStorage.removeItem('starryhole_messages');
+            localStorage.removeItem('starryhole_stars');
+            localStorage.removeItem('starryhole_mood');
+            localStorage.removeItem('starryhole_mode');
+            messages = []; stars = []; currentMood = 'calm'; chatMode = 'listen';
+            document.getElementById('chatArea').innerHTML = '';
+            document.getElementById('modeSwitch').classList.remove('active');
+            renderStarJar();
+            renderMoodChart();
+            const welcome = document.getElementById('welcomeSection');
+            if (welcome) welcome.style.display = 'block';
+            addAIMessage('所有记录已安全销毁。\n\n星空依旧纯净，随时欢迎你再来。晚安。');
+            btn.textContent = '🗑️ 销毁所有记录';
+            btn.classList.remove('confirm-state');
+            destroyConfirmStep = 0;
+        }
+    }
+</script>
+</body>
+</html>
