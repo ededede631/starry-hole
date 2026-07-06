@@ -793,28 +793,27 @@
         }
 
         /* ---------- 白噪音面板 ---------- */
+        /* ---------- 白噪音面板（内嵌式，和快速倾诉一致） ---------- */
         .noise-panel {
-            position: fixed;
-            bottom: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 360px;
-            max-width: 90vw;
-            background: linear-gradient(180deg, rgba(10,14,26,0.98), rgba(17,24,50,0.98));
-            backdrop-filter: blur(20px);
-            z-index: 100;
-            transition: bottom 0.5s cubic-bezier(0.4,0,0.2,1);
-            padding: 24px;
-            border-radius: 20px 20px 0 0;
+            display: none;
+            padding: 16px;
+            border-radius: 16px;
             border: 1px solid var(--card-border);
-            border-bottom: none;
+            background: rgba(15,20,40,0.4);
+            margin-bottom: 12px;
         }
-        .noise-panel.open { bottom: 0; }
-        /* 确保输入框不被面板遮挡 */
-        .input-area {
-            position: relative;
-            z-index: 150;
-            background: rgba(10,14,26,0.95);
+        .noise-panel.show { display: block; animation: fadeInUp 0.4s ease; }
+        .noise-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .noise-panel .panel-header h2 {
+            font-size: 14px;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+            margin: 0;
         }
         .noise-item {
             display: flex;
@@ -1065,7 +1064,31 @@
             <button class="quick-submit" onclick="submitQuickVent()">送入星空</button>
         </div>
 
-        <div class="input-row">
+    <!-- 白噪音面板（内嵌式） -->
+    <div class="noise-panel" id="noisePanel">
+        <div class="panel-header">
+            <h2>🎵 白噪音</h2>
+            <button class="icon-btn" onclick="toggleNoisePanel(this)" style="font-size:12px;">✕</button>
+        </div>
+        <div class="noise-item">
+            <div><span class="noise-icon">🌧️</span><span class="noise-label">深夜雨声</span></div>
+            <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('rain', this.value)">
+        </div>
+        <div class="noise-item">
+            <div><span class="noise-icon">🍃</span><span class="noise-label">晚风拂面</span></div>
+            <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('wind', this.value)">
+        </div>
+        <div class="noise-item">
+            <div><span class="noise-icon">🌌</span><span class="noise-label">星空静音</span></div>
+            <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('space', this.value)">
+        </div>
+        <div class="noise-item">
+            <div><span class="noise-icon">🔥</span><span class="noise-label">壁炉轻响</span></div>
+            <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('fire', this.value)">
+        </div>
+    </div>
+
+    <div class="input-row">
             <div class="input-wrapper">
                 <textarea id="messageInput"
                     placeholder="把心事写在这里，星星会替你保管..."
@@ -1078,7 +1101,7 @@
         <div class="toolbar">
             <div class="tool-chip" onclick="toggleQuickVent(this)">⚡ 快速倾诉</div>
             <div class="tool-chip" onclick="toggleVoiceInput(this)">🎙️ 语音输入</div>
-            <div class="tool-chip" onclick="toggleNoisePanel()">🎵 白噪音</div>
+            <div class="tool-chip" onclick="toggleNoisePanel(this)">🎵 白噪音</div>
             <div class="tool-chip" onclick="readAloud()">🔊 朗读</div>
             <div class="tool-chip" onclick="collectStar()">⭐ 存入星罐</div>
         </div>
@@ -1181,29 +1204,7 @@
     </div>
 </div>
 
-<!-- 白噪音面板 -->
-<div class="noise-panel" id="noisePanel">
-    <div class="panel-header">
-        <h2 style="font-size:16px; letter-spacing:3px;">🎵 白噪音</h2>
-        <button class="icon-btn" onclick="toggleNoisePanel()">✕</button>
-    </div>
-    <div class="noise-item">
-        <div><span class="noise-icon">🌧️</span><span class="noise-label">深夜雨声</span></div>
-        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('rain', this.value)">
-    </div>
-    <div class="noise-item">
-        <div><span class="noise-icon">🍃</span><span class="noise-label">晚风拂面</span></div>
-        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('wind', this.value)">
-    </div>
-    <div class="noise-item">
-        <div><span class="noise-icon">🌌</span><span class="noise-label">星空静音</span></div>
-        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('space', this.value)">
-    </div>
-    <div class="noise-item">
-        <div><span class="noise-icon">🔥</span><span class="noise-label">壁炉轻响</span></div>
-        <input type="range" class="noise-slider" min="0" max="100" value="0" oninput="setNoise('fire', this.value)">
-    </div>
-</div>
+
 
 <!-- 安全设置面板 -->
 <div class="safety-panel" id="safetyPanel">
@@ -2530,11 +2531,15 @@
         document.getElementById('starJarPanel').classList.toggle('open');
         document.getElementById('overlay').classList.toggle('show');
     }
-    function toggleNoisePanel() {
+    function toggleNoisePanel(btn) {
         const panel = document.getElementById('noisePanel');
-        const overlay = document.getElementById('overlay');
-        panel.classList.toggle('open');
-        overlay.classList.toggle('show', panel.classList.contains('open'));
+        panel.classList.toggle('show');
+        if (btn) btn.classList.toggle('active');
+        else {
+            document.querySelectorAll('.toolbar .tool-chip').forEach(c => {
+                if (c.textContent.includes('白噪音')) c.classList.toggle('active');
+            });
+        }
     }
     function toggleSafetyPanel() {
         document.getElementById('safetyPanel').classList.toggle('open');
@@ -2544,7 +2549,7 @@
         document.getElementById('starJarPanel').classList.remove('open');
         document.getElementById('safetyPanel').classList.remove('open');
         document.getElementById('firstaidPanel').classList.remove('open');
-        document.getElementById('noisePanel').classList.remove('open');
+        document.getElementById('noisePanel').classList.remove('show');
         document.getElementById('overlay').classList.remove('show');
     }
 
