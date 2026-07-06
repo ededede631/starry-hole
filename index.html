@@ -17,16 +17,19 @@
     <meta property="og:locale" content="zh_CN">
     <!-- 让搜索引擎知道这是中文网站 -->
     <meta http-equiv="content-language" content="zh-CN">
+    <!-- 内容安全策略：仅允许必要资源 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; font-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; media-src 'self';">
     <!-- 网站图标 -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
     <!-- 霞鹜文楷：开源手写楷书，温暖人文 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
     <style>
         /* ============================================
-           星洞 · 深夜情绪树洞 v2.0
-           新增：情绪急救箱 / 星空呼吸 / 模式切换
-           认知卡片 / 快速倾诉 / 自动过期
-           情绪画像 / 危机检测
+           星洞 · 深夜情绪树洞 v2.1
+           修复：无障碍ARIA / 减弱动效 / 危机热线
+           键盘导航 / 白噪音资源泄漏 / 存储溢出
+           CSP安全策略 / AI局限性声明 / 涂鸦resize
+           新增：AI局限性免责 / 存储满自动清理
            ============================================ */
 
         :root {
@@ -967,6 +970,22 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        /* ---------- 无障碍：减弱动效 ---------- */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .emotion-sparkle, .star-collect { display: none !important; }
+        }
+
+        /* ---------- 焦点可见样式 ---------- */
+        :focus-visible {
+            outline: 2px solid var(--accent-warm);
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
@@ -976,17 +995,17 @@
 <div class="app-container">
 
     <!-- 顶部栏 -->
-    <div class="top-bar">
-        <div class="logo">
+    <header class="top-bar" role="banner">
+        <div class="logo" aria-label="星洞 Starry Hole">
             星洞 <span>STARRY HOLE</span>
         </div>
-        <div class="top-actions">
-            <button class="text-btn" onclick="toggleBreathOverlay()">呼吸</button>
-            <button class="text-btn" onclick="toggleFirstAid()">急救箱</button>
-            <button class="text-btn" onclick="toggleSafetyPanel()">安全</button>
-            <button class="text-btn" onclick="toggleStarJar()">星罐</button>
-        </div>
-    </div>
+        <nav class="top-actions" aria-label="功能导航">
+            <button class="text-btn" onclick="toggleBreathOverlay()" aria-label="打开星空呼吸练习">呼吸</button>
+            <button class="text-btn" onclick="toggleFirstAid()" aria-label="打开情绪急救箱">急救箱</button>
+            <button class="text-btn" onclick="toggleSafetyPanel()" aria-label="打开隐私与安全设置">安全</button>
+            <button class="text-btn" onclick="toggleStarJar()" aria-label="打开情绪星罐">星罐</button>
+        </nav>
+    </header>
 
     <!-- 欢迎区域 -->
     <div class="welcome-section fade-in" id="welcomeSection">
@@ -994,25 +1013,25 @@
         <p>你的一切情绪，都值得被温柔收留</p>
 
         <!-- 倾诉模式切换 -->
-        <div class="mode-toggle" style="margin-top: 16px;">
+        <div class="mode-toggle" style="margin-top: 16px;" role="radiogroup" aria-label="倾诉模式">
             <span>🌙 倾听模式</span>
-            <div class="mode-switch" id="modeSwitch" onclick="toggleMode()"></div>
+            <div class="mode-switch" id="modeSwitch" onclick="toggleMode()" role="switch" aria-checked="false" aria-label="切换倾听/建议模式" tabindex="0"></div>
             <span>💡 建议模式</span>
         </div>
 
-        <div class="mood-selector" style="justify-content: center; margin-top: 20px;">
-            <div class="mood-chip" onclick="setMood('sad', this)">🌧️ 有些低落</div>
-            <div class="mood-chip" onclick="setMood('anxious', this)">🌀 心绪不宁</div>
-            <div class="mood-chip" onclick="setMood('calm', this)">🌙 想安静聊聊</div>
-            <div class="mood-chip" onclick="setMood('happy', this)">✨ 有开心的事</div>
+        <div class="mood-selector" style="justify-content: center; margin-top: 20px;" role="radiogroup" aria-label="选择当前情绪">
+            <div class="mood-chip" onclick="setMood('sad', this)" role="radio" aria-checked="false" tabindex="0">🌧️ 有些低落</div>
+            <div class="mood-chip" onclick="setMood('anxious', this)" role="radio" aria-checked="false" tabindex="0">🌀 心绪不宁</div>
+            <div class="mood-chip" onclick="setMood('calm', this)" role="radio" aria-checked="false" tabindex="0">🌙 想安静聊聊</div>
+            <div class="mood-chip" onclick="setMood('happy', this)" role="radio" aria-checked="false" tabindex="0">✨ 有开心的事</div>
         </div>
     </div>
 
     <!-- 对话区域 -->
-    <div class="chat-area" id="chatArea"></div>
+    <main class="chat-area" id="chatArea" role="log" aria-label="对话记录" aria-live="polite"></main>
 
     <!-- 输入区域 -->
-    <div class="input-area">
+    <footer class="input-area">
         <!-- 快速倾诉面板 -->
         <div class="quick-vent" id="quickVent">
             <div class="quick-vent-title">⚡ 快速倾诉 — 不想打字也没关系</div>
@@ -1054,7 +1073,7 @@
             <div class="tool-chip" onclick="readAloud()">🔊 朗读</div>
             <div class="tool-chip" onclick="collectStar()">⭐ 存入星罐</div>
         </div>
-    </div>
+    </footer>
 </div>
 
 <!-- 遮罩 -->
@@ -1204,6 +1223,9 @@
     <div class="safety-section">
         <h3>关于星洞</h3>
         <p>星洞是一个免费、私密的情绪陪伴空间。没有广告、没有会员、没有充值。只为在深夜给你一个温柔的出口。</p>
+        <p style="margin-top: 8px; font-size: 12px; color: var(--accent-warm); opacity: 0.8;">
+            ⚠️ 重要提醒：星洞的陪伴基于预设的共情回复，并非专业的心理咨询或医疗建议。如果你正在经历持续的心理困扰，请寻求持证心理咨询师或专业医疗机构的帮助。你的感受值得被专业对待。
+        </p>
     </div>
 </div>
 
@@ -1256,8 +1278,8 @@
         }
     ];
 
-    // 危机关键词
-    const crisisKeywords = ['死', '自杀', '轻生', '不想活', '跳楼', '割腕', '了结', '结束生命', '活不下去', '自杀'];
+    // 危机关键词（包含常见高危表述变体）
+    const crisisKeywords = ['死', '自杀', '轻生', '不想活', '跳楼', '割腕', '了结', '结束生命', '活不下去', '想死', '一死了之', '跳河', '服毒', '自残', '不想活了', '活着没意思', '不如死了', '去死'];
 
     // ---------- 初始化 ----------
     window.addEventListener('DOMContentLoaded', () => {
@@ -1270,6 +1292,7 @@
         updateExpireInfo();
         initSpeechRecognition();
         initDoodleCanvas();
+        initKeyboardAccessibility();
 
         if (messages.length === 0) {
             setTimeout(() => {
@@ -1277,6 +1300,27 @@
             }, 1500);
         }
     });
+
+    // 键盘无障碍支持：让 mode-switch 和 mood-chip 支持回车/空格触发
+    function initKeyboardAccessibility() {
+        const modeSwitch = document.getElementById('modeSwitch');
+        if (modeSwitch) {
+            modeSwitch.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleMode();
+                }
+            });
+        }
+        document.querySelectorAll('.mood-chip').forEach(chip => {
+            chip.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    chip.click();
+                }
+            });
+        });
+    }
 
     // ============================================
     //  流星坠落星空
@@ -1399,7 +1443,9 @@
     // ============================================
     function toggleMode() {
         chatMode = chatMode === 'listen' ? 'suggest' : 'listen';
-        document.getElementById('modeSwitch').classList.toggle('active', chatMode === 'suggest');
+        const switchEl = document.getElementById('modeSwitch');
+        switchEl.classList.toggle('active', chatMode === 'suggest');
+        switchEl.setAttribute('aria-checked', chatMode === 'suggest' ? 'true' : 'false');
         // 在对话中提示模式切换
         if (chatMode === 'suggest') {
             addSystemMessage('已切换为「建议模式」——我会试着给你一些想法，但永远不会强迫你接受。');
@@ -1449,13 +1495,17 @@
         const chatArea = document.getElementById('chatArea');
         const card = document.createElement('div');
         card.className = 'crisis-card';
+        card.setAttribute('role', 'alert');
         card.innerHTML = `
             我注意到你说了一些让我很担心的话。<br><br>
             我只是一颗星星，能力有限。<br>
             但有很多人，专门擅长在深夜接住这些沉重。<br><br>
-            <a class="hotline" href="tel:4001619995">✦ 24小时心理援助热线 400-161-9995</a><br>
-            <a class="hotline" href="tel:01082951332" style="margin-top:6px; display:inline-block;">✦ 北京心理危机干预 010-82951332</a><br>
-            <a class="hotline" href="tel:12320" style="margin-top:6px; display:inline-block;">✦ 卫生热线 12320</a>
+            <a class="hotline" href="tel:01082951332" rel="noopener">✦ 北京心理危机研究与干预中心 010-82951332</a><br>
+            <a class="hotline" href="tel:4001619995" style="margin-top:6px; display:inline-block;" rel="noopener">✦ 希望24热线 400-161-9995</a><br>
+            <a class="hotline" href="tel:12320" style="margin-top:6px; display:inline-block;" rel="noopener">✦ 全国卫生热线 12320</a><br>
+            <span style="font-size:11px; color:var(--text-secondary); margin-top:12px; display:inline-block;">
+                如果不方便打电话，也可以去离你最近的医院急诊科。<br>你不是一个人，请给自己一个机会。
+            </span>
         `;
         chatArea.appendChild(card);
         scrollToBottom();
@@ -1646,8 +1696,15 @@
         let color = '#f5c26b';
 
         function resizeDoodle() {
+            // 保存当前画布内容，避免resize时丢失
+            const imageData = canvas.width > 0 && canvas.height > 0
+                ? doodleCtx.getImageData(0, 0, canvas.width, canvas.height)
+                : null;
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight - 60;
+            if (imageData) {
+                doodleCtx.putImageData(imageData, 0, 0);
+            }
         }
         resizeDoodle();
         window.addEventListener('resize', resizeDoodle);
@@ -1788,8 +1845,14 @@
     // ============================================
     function setMood(mood, el) {
         currentMood = mood;
-        document.querySelectorAll('.mood-chip').forEach(c => c.classList.remove('selected'));
-        if (el) el.classList.add('selected');
+        document.querySelectorAll('.mood-chip').forEach(c => {
+            c.classList.remove('selected');
+            c.setAttribute('aria-checked', 'false');
+        });
+        if (el) {
+            el.classList.add('selected');
+            el.setAttribute('aria-checked', 'true');
+        }
         spawnEmotionSparkles(mood);
 
         // 隐藏欢迎区域
@@ -1883,7 +1946,7 @@
     }
 
     function generateLocalReply(userText) {
-        const text = userText.toLowerCase();
+        const text = userText;
 
         // 建议模式追加引导语
         const suggestPrefix = chatMode === 'suggest' ?
@@ -2017,7 +2080,7 @@
     function renderChatHistory() {
         const chatArea = document.getElementById('chatArea');
         chatArea.innerHTML = '';
-        // 初始化msgIdCounter为最大已有值
+        // 初始化msgIdCounter为最大已有值，避免ID冲突
         msgIdCounter = 0;
         messages.forEach(msg => {
             if (!msg.msgId) msg.msgId = ++msgIdCounter;
@@ -2029,7 +2092,30 @@
             letter.innerHTML = `<div>${escapeHTML(msg.text).replace(/\n/g, '<br>')}</div><div class="letter-time">${timeStr}</div>`;
             chatArea.appendChild(letter);
         });
+        // 恢复情绪选择器的ARIA状态
+        restoreMoodSelectorState();
         if (messages.length > 0) scrollToBottom();
+    }
+
+    // 恢复情绪选择器的高亮和ARIA状态
+    function restoreMoodSelectorState() {
+        document.querySelectorAll('.mood-chip').forEach(c => {
+            c.classList.remove('selected');
+            c.setAttribute('aria-checked', 'false');
+        });
+        const moodMap = { sad: 0, anxious: 1, calm: 2, happy: 3 };
+        if (moodMap[currentMood] !== undefined) {
+            const target = document.querySelectorAll('.mood-chip')[moodMap[currentMood]];
+            if (target) {
+                target.classList.add('selected');
+                target.setAttribute('aria-checked', 'true');
+            }
+        }
+        // 恢复模式切换开关的ARIA状态
+        const modeSwitch = document.getElementById('modeSwitch');
+        if (modeSwitch) {
+            modeSwitch.setAttribute('aria-checked', chatMode === 'suggest' ? 'true' : 'false');
+        }
     }
 
     // ============================================
@@ -2160,11 +2246,16 @@
     // ============================================
     function setNoise(type, value) {
         const volume = value / 100;
+        if (!noiseAudioContext) noiseAudioContext = new (window.AudioContext || window.webkitAudioContext)();
         if (volume === 0) {
-            if (noiseNodes[type]) noiseNodes[type].gain.gain.linearRampToValueAtTime(0, noiseAudioContext.currentTime + 0.5);
+            if (noiseNodes[type]) {
+                noiseNodes[type].gain.gain.linearRampToValueAtTime(0, noiseAudioContext.currentTime + 0.5);
+                // 停止音频源以释放资源
+                try { noiseNodes[type].source.stop(noiseAudioContext.currentTime + 0.6); } catch(e) {}
+                delete noiseNodes[type];
+            }
             return;
         }
-        if (!noiseAudioContext) noiseAudioContext = new (window.AudioContext || window.webkitAudioContext)();
         if (noiseNodes[type]) {
             noiseNodes[type].gain.gain.linearRampToValueAtTime(volume * 0.3, noiseAudioContext.currentTime + 0.3);
             return;
@@ -2240,7 +2331,10 @@
             if (allAIMsgs.length > 0) {
                 allAIMsgs[allAIMsgs.length - 1].classList.add('reading');
                 utterance.onend = () => allAIMsgs[allAIMsgs.length - 1].classList.remove('reading');
+                utterance.onerror = () => allAIMsgs[allAIMsgs.length - 1].classList.remove('reading');
             }
+        } else {
+            addSystemMessage('你的浏览器暂不支持朗读功能');
         }
     }
 
@@ -2253,7 +2347,21 @@
             localStorage.setItem('starryhole_stars', JSON.stringify(stars));
             localStorage.setItem('starryhole_mood', currentMood);
             localStorage.setItem('starryhole_mode', chatMode);
-        } catch (e) { console.warn('存储空间不足'); }
+        } catch (e) {
+            console.warn('存储空间不足，尝试清理过期数据...');
+            // 存储满时，清理最旧的50%消息重试
+            if (e.name === 'QuotaExceededError' && messages.length > 10) {
+                const half = Math.floor(messages.length / 2);
+                messages = messages.slice(half);
+                stars = stars.slice(Math.floor(stars.length / 2));
+                try {
+                    localStorage.setItem('starryhole_messages', JSON.stringify(messages));
+                    localStorage.setItem('starryhole_stars', JSON.stringify(stars));
+                } catch (e2) {
+                    console.warn('存储清理后仍然不足');
+                }
+            }
+        }
     }
 
     function loadFromStorage() {
