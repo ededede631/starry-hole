@@ -1204,6 +1204,10 @@
             <div class="mood-bar-label">🌙 平静</div>
             <div class="mood-bar-label">✨ 开心</div>
         </div>
+        <div style="margin-top:16px;">
+            <div style="font-size:12px; color:var(--text-secondary); text-align:center; letter-spacing:2px; margin-bottom:8px;">✦ 近7天情绪轨迹</div>
+            <canvas id="moodTrendCanvas" width="300" height="100" style="width:100%; max-width:300px; margin:0 auto; display:block;"></canvas>
+        </div>
     </div>
 </div>
 
@@ -1227,6 +1231,10 @@
         <h3>自动过期（化为星尘）</h3>
         <p>超过7天的对话记录会自动"化为星尘"悄然消失，你不需要纠结"要不要删"。</p>
         <p class="expire-info" id="expireInfo"></p>
+    </div>
+    <div class="safety-section">
+        <h3>📊 你的星洞足迹</h3>
+        <div id="statsPanel" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;"></div>
     </div>
     <div class="safety-section">
         <h3>一键销毁</h3>
@@ -1302,6 +1310,7 @@
         renderChatHistory();
         renderStarJar();
         renderMoodChart();
+        renderStatsPanel();
         updateExpireInfo();
         initSpeechRecognition();
         initDoodleCanvas();
@@ -1309,8 +1318,22 @@
 
         if (messages.length === 0) {
             setTimeout(() => {
-                addAIMessage('你好呀，夜深了。\n\n我是星洞里的倾听者，没有名字，只是一颗愿意陪你到天亮的星星。\n\n不用拘束，想说什么都可以。开心的事，难过的事，或者只是想安静地待一会儿，我都在。');
+                const greeting = generatePersonalizedGreeting();
+                addAIMessage(greeting);
             }, 1500);
+        } else {
+            // 回访用户：根据离开时长显示不同问候
+            const lastTs = messages[messages.length - 1].timestamp || 0;
+            const hoursSince = (Date.now() - lastTs) / (1000 * 60 * 60);
+            if (hoursSince > 1) {
+                setTimeout(() => {
+                    if (hoursSince > 24) {
+                        addAIMessage('你回来了。\n\n上次我们聊过之后，你还好吗？不管发生了什么，今晚星星依然在这里。');
+                    } else {
+                        addAIMessage('又来了呀。\n\n看起来今晚又有心事？我一直在，想说什么就说吧。');
+                    }
+                }, 1000);
+            }
         }
     });
 
@@ -1333,6 +1356,120 @@
                 }
             });
         });
+    }
+
+    // 渲染7日情绪趋势折线图
+    function renderMoodTrend() {
+        const canvas = document.getElementById('moodTrendCanvas');
+        if (!canvas || !canvas.getContext) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = 300 * dpr;
+        canvas.height = 100 * dpr;
+        ctx.scale(dpr, dpr);
+        const W = 300, H = 100;
+
+        ctx.clearRect(0, 0, W, H);
+
+        // 收集最近7天的情绪数据
+        const moodScore = { sad: 1, anxious: 2, calm: 3, happy: 4 };
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+            const dayStart = Date.now() - i * 86400000;
+            const dayEnd = dayStart + 86400000;
+            const dayMsgs = messages.filter(m => m.timestamp >= dayStart && m.timestamp < dayEnd && m.mood);
+            if (dayMsgs.length > 0) {
+                const avg = dayMsgs.reduce((s, m) => s + (moodScore[m.mood] || 3), 0) / dayMsgs.length;
+                days.push({ score: avg, date: new Date(dayStart), count: dayMsgs.length });
+            } else {
+                days.push({ score: null, date: new Date(dayStart), count: 0 });
+            }
+        }
+
+        // 绘制
+        const padX = 30, padY = 15;
+        const plotW = W - padX * 2;
+        const plotH = H - padY * 2;
+
+        // 网格线
+        ctx.strokeStyle = 'rgba(126,184,218,0.1)';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i <= 3; i++) {
+            const y = padY + (plotH / 3) * i;
+            ctx.beginPath(); ctx.moveTo(padX, y); ctx.lineTo(W - padX, y); ctx.stroke();
+        }
+
+        // Y轴标签
+        ctx.font = '9px sans-serif';
+        ctx.fillStyle = 'rgba(126,184,218,0.4)';
+        ctx.textAlign = 'right';
+        const moodLabels = { 1: '难过', 2: '焦虑', 3: '平静', 4: '开心' };
+        for (let i = 1; i <= 4; i++) {
+            const y = padY + plotH - ((i - 1) / 3) * plotH;
+            ctx.fillText(moodLabels[i], padX - 4, y + 3);
+        }
+
+        // 连线
+        const points = [];
+        days.forEach((d, i) => {
+            if (d.score !== null) {
+                const x = padX + (i / 6) * plotW;
+                const y = padY + plotH - ((d.score - 1) / 3) * plotH;
+                points.push({ x, y, score: d.score });
+            }
+        });
+
+        if (points.length > 1) {
+            // 渐变线
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.strokeStyle = 'rgba(245,194,107,0.6)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 填充区域
+            ctx.lineTo(points[points.length - 1].x, padY + plotH);
+            ctx.lineTo(points[0].x, padY + plotH);
+            ctx.closePath();
+            const grad = ctx.createLinearGradient(0, padY, 0, padY + plotH);
+            grad.addColorStop(0, 'rgba(245,194,107,0.15)');
+            grad.addColorStop(1, 'rgba(245,194,107,0.01)');
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
+        // 数据点
+        points.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+            const colors = { 1: '#8b7eb8', 2: '#7eb8da', 3: '#a0b8d0', 4: '#ffd700' };
+            ctx.fillStyle = colors[Math.round(p.score)] || '#a0b8d0';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(10,14,26,0.8)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+
+        // X轴日期标签
+        ctx.font = '9px sans-serif';
+        ctx.fillStyle = 'rgba(126,184,218,0.4)';
+        ctx.textAlign = 'center';
+        days.forEach((d, i) => {
+            const x = padX + (i / 6) * plotW;
+            const label = ['日', '一', '二', '三', '四', '五', '六'][d.date.getDay()];
+            ctx.fillText(label, x, H - 2);
+        });
+
+        // 无数据提示
+        if (points.length === 0) {
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = 'rgba(126,184,218,0.3)';
+            ctx.textAlign = 'center';
+            ctx.fillText('暂无数据，开始倾诉后这里会出现轨迹', W / 2, H / 2);
+        }
     }
 
     // ============================================
@@ -1928,6 +2065,55 @@
             bar.title = `${mood}: ${count}次`;
             container.appendChild(bar);
         });
+        renderMoodTrend();
+    }
+
+    // ============================================
+    //  使用统计面板
+    // ============================================
+    function renderStatsPanel() {
+        const panel = document.getElementById('statsPanel');
+        if (!panel) return;
+
+        const userMsgs = messages.filter(m => m.role === 'user');
+        const totalWords = userMsgs.reduce((sum, m) => sum + m.text.length, 0);
+        const totalMsgs = messages.length;
+        const totalStars = stars.length;
+
+        // 访问次数和连续天数
+        const visitCount = parseInt(localStorage.getItem('starryhole_visits') || '1');
+        const streakRaw = localStorage.getItem('starryhole_visitStreak') || '1|0';
+        const streak = streakRaw.split('|')[0];
+
+        // 最活跃时段
+        const hourCounts = {};
+        messages.forEach(m => {
+            if (m.time) {
+                const h = parseInt(m.time.split(':')[0]) || 0;
+                hourCounts[h] = (hourCounts[h] || 0) + 1;
+            }
+        });
+        let peakHour = '—';
+        let peakCount = 0;
+        for (const [h, c] of Object.entries(hourCounts)) {
+            if (c > peakCount) { peakCount = c; peakHour = `${h}:00`; }
+        }
+
+        const stats = [
+            { label: '💬 累计倾诉', value: `${userMsgs.length} 次` },
+            { label: '📝 总字数', value: `${totalWords} 字` },
+            { label: '⭐ 收集星星', value: `${totalStars} 颗` },
+            { label: '🌙 来过星洞', value: `${visitCount} 次` },
+            { label: '🔥 连续访问', value: `${streak} 天` },
+            { label: '⏰ 最活跃时段', value: peakHour },
+        ];
+
+        panel.innerHTML = stats.map(s => `
+            <div style="background:rgba(126,184,218,0.06); border-radius:10px; padding:10px 12px; text-align:center;">
+                <div style="font-size:11px; color:var(--text-secondary); letter-spacing:1px; margin-bottom:4px;">${s.label}</div>
+                <div style="font-size:18px; color:var(--accent-warm); font-weight:bold;">${s.value}</div>
+            </div>
+        `).join('');
     }
 
     // ============================================
@@ -2033,6 +2219,46 @@
             addAIMessage(reply);
             maybeShowCognitiveCard(text);
         }, 1500 + Math.random() * 1500);
+    }
+
+    // 个性化欢迎问候（根据时段+回访次数）
+    function generatePersonalizedGreeting() {
+        const hour = new Date().getHours();
+        const visitCount = parseInt(localStorage.getItem('starryhole_visits') || '0') + 1;
+        localStorage.setItem('starryhole_visits', visitCount.toString());
+        localStorage.setItem('starryhole_lastVisit', Date.now().toString());
+
+        // 计算连续访问天数
+        const visitsRaw = localStorage.getItem('starryhole_visitStreak') || '0|0';
+        const [streak, lastVisitDay] = visitsRaw.split('|');
+        const today = Math.floor(Date.now() / 86400000);
+        const newStreak = (today === parseInt(lastVisitDay)) ? parseInt(streak) : (parseInt(lastVisitDay) === today - 1) ? parseInt(streak) + 1 : 1;
+        localStorage.setItem('starryhole_visitStreak', `${newStreak}|${today}`);
+
+        // 时段描述
+        let timeGreeting = '';
+        if (hour >= 0 && hour < 3) timeGreeting = '凌晨了，还没睡呢';
+        else if (hour >= 3 && hour < 6) timeGreeting = '天快亮了';
+        else if (hour >= 6 && hour < 9) timeGreeting = '早上好呀，这么早就起来了';
+        else if (hour >= 9 && hour < 12) timeGreeting = '上午好';
+        else if (hour >= 12 && hour < 14) timeGreeting = '中午好';
+        else if (hour >= 14 && hour < 18) timeGreeting = '下午好';
+        else if (hour >= 18 && hour < 21) timeGreeting = '晚上好';
+        else timeGreeting = '夜深了';
+
+        // 首次 vs 回访
+        if (visitCount === 1) {
+            return `${timeGreeting}。\n\n我是星洞里的倾听者，没有名字，只是一颗愿意陪你到天亮的星星。\n\n不用拘束，想说什么都可以——开心的事、难过的事，或者只是安静地待一会儿，我都在。\n\n这里是你的秘密基地，所有文字只属于你自己。`;
+        }
+
+        const visitWord = visitCount <= 3 ? `第${visitCount}次` : '又';
+        const streakNote = newStreak >= 3 ? `\n\n noticed 你连续${newStreak}天来了。能坚持记录自己的情绪，这本身就很了不起。` : '';
+        const greetings = [
+            `${timeGreeting}，${visitWord}来到星洞。${streakNote}\n\n我在这里等你。想聊聊吗？`,
+            `${timeGreeting}。${streakNote || '欢迎回来。'}\n\n无论今天经历了什么，这里都是安全的。说说看？`,
+            `${timeGreeting}。${visitWord}见面了。${streakNote}\n\n你每次来，星洞里的星星都会亮一些。今天想说什么呢？`
+        ];
+        return greetings[Math.floor(Math.random() * greetings.length)];
     }
 
     function generateLocalReply(userText) {
