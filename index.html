@@ -2264,8 +2264,8 @@
     function generateLocalReply(userText) {
         const text = userText;
 
-        // 建议模式追加引导语
-        const suggestPrefix = chatMode === 'suggest' ? '[建议模式] ' : '';
+        // 建议模式不再显示前缀标签，通过回复内容区分即可
+        const suggestPrefix = '';
 
         // 提取用户提到的关键话题用于个性化回复
         const topicReply = detectTopicReply(text);
