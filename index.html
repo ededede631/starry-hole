@@ -2472,8 +2472,126 @@
         return suggestPrefix + generalReplies[Math.floor(Math.random() * generalReplies.length)];
     }
 
-    // 话题感知回复 - 根据具体关键词生成更有针对性的回复
+    // ============================================
+    //  知识性问题识别与回答
+    // ============================================
+    function detectInfoQuestion(text) {
+        const t = text.trim();
+
+        // 常见英文短语/歌词/名言翻译库
+        const phrases = {
+            'my heart will go on': '"My Heart Will Go On" 是电影《泰坦尼克号》(Titanic) 的主题曲，由 Celine Dion 演唱。\n\n意思是"我心永恒"——无论发生什么，我的心会一直继续。表达的是一种超越生死的、坚定不移的爱。\n\n这首歌1997年发布后风靡全球，是电影史上最经典的配乐之一。',
+            'i love you': '"I love you" 就是"我爱你"。\n\n三个字，却是最有力量的表达。是谁让你想问这个的呢？',
+            'i love you so much': '"I love you so much" 意思是"我非常爱你"或"我太爱你了"。\n\n比普通的"我爱你"多了一份急切和深情。深夜问起这句话，是有特别想对谁说的话吗？',
+            'see you again': '"See You Again" 是电影《速度与激情7》的主题曲，由 Wiz Khalifa 和 Charlie Puth 演唱。\n\n意思是"再次相见"。这首歌是为纪念意外去世的演员保罗·沃克而作，表达了对逝去挚友的思念和不舍。',
+            'let it go': '"Let It Go" 是迪士尼动画《冰雪奇缘》(Frozen) 的主题曲。\n\n意思是"随它吧/放手吧"。歌曲讲述的是放下束缚、做真实的自己。\n\n有时候，放下确实需要勇气。',
+            'someone like you': '"Someone Like You" 是 Adele 的经典歌曲。\n\n意思是"像你一样的人"。讲述的是分手后偶遇旧爱的复杂心情——怀念、遗憾，但最终接受现实。',
+            'yesterday once more': '"Yesterday Once More" 是卡朋特乐队 (The Carpenters) 的经典名曲。\n\n意思是"昨日重现"。听着老歌，回忆过去美好时光的感伤。',
+            'right here waiting': '"Right Here Waiting" 是 Richard Marx 的经典情歌。\n\n意思是"就在这里等你"。无论你在哪里、要等多久，我都会一直在这里等你。',
+            'hotel california': '"Hotel California" 是老鹰乐队的经典之作。\n\n意思是"加州旅馆"。被广泛解读为对美国梦和物质主义的反思——你以为是天堂的地方，可能是一个无法离开的牢笼。',
+            'hey jude': '"Hey Jude" 是披头士乐队的经典歌曲，保罗·麦卡特尼所作。\n\n意思是"嘿，裘德"。是一首鼓励人心的歌——告诉一个孩子，不管遇到什么困难，都要勇敢面对。\n\n"Take a sad song and make it better."',
+            'sound of silence': '"The Sound of Silence" 是 Simon & Garfunkel 的经典民谣。\n\n意思是"寂静之声"。讲述的是人与人之间无法真正沟通的孤独感。',
+            'hakuna matata': '"Hakuna Matata" 来自迪士尼动画《狮子王》。\n\n这是一句斯瓦希里语，意思是"无忧无虑"。就是告诉你要放下烦恼，享受当下。',
+            'que sera sera': '"Que Sera Sera" 是一首经典英文歌曲。\n\n这是一句西班牙语，意思是"该怎样就怎样/顺其自然"。\n\n有些事情确实不是我们能控制的，顺其自然也许是最好的态度。',
+            'bohemian rhapsody': '"Bohemian Rhapsody" 是皇后乐队 (Queen) 的传世经典。\n\n意思是"波西米亚狂想曲"。融合了摇滚、歌剧等多种风格，打破了歌曲的固有模式。它告诉我们：有些作品不需要被定义，只需要被感受。',
+            'blowing in the wind': '"Blowing in the Wind" 是鲍勃·迪伦的代表作。\n\n意思是"随风飘荡"。歌词是一连串反问：一个人要走多少路，才能真正成熟？答案，就飘散在风中。',
+            'never gonna give you up': '"Never Gonna Give You Up" 是 Rick Astley 1987年的经典舞曲。\n\n意思是"永远不会放弃你"。承诺不管发生什么都不会离开你。',
+            'what is love': '"What is Love"——"什么是爱？"\n\n这是一个被问了千年的问题。有人说爱是牵挂，有人说爱是放手，有人说爱是陪伴。\n\n也许爱没有标准答案，但此刻你愿意思考这个问题，说明你是一个认真对待感情的人。',
+            'we are the world': '"We Are the World" 是1985年由迈克尔·杰克逊和莱昂纳尔·里奇创作的公益歌曲。\n\n意思是"天下一家"。号召全世界人民团结互助、关爱彼此。',
+        };
+
+        // 检查英文短语匹配（忽略大小写）
+        const lowerText = t.toLowerCase();
+        for (const [phrase, answer] of Object.entries(phrases)) {
+            if (lowerText.includes(phrase)) return answer;
+        }
+
+        // "XX是什么意思" 模式
+        const meaningPattern = t.match(/(.{2,30}?)(是什么意思|什么意思|怎么翻译|中文是什么|怎么读|啥意思|翻译成中文)/);
+        if (meaningPattern) {
+            const query = meaningPattern[1].trim();
+            if (/^[a-zA-Z\s',.!?]+$/.test(query)) {
+                return detectEnglishPhrase(query) || `"${query}" 这个我暂时不太确定准确意思。\n\n不过你可以试着搜索引擎查一下。或者我们聊点别的？`;
+            }
+        }
+
+        // 纯英文问句（可能是翻译请求）
+        if (/^[a-zA-Z][\w\s',.!?]{3,}$/.test(t) && t.split(' ').length >= 2 && t.split(' ').length <= 15) {
+            return detectEnglishPhrase(t) || `你发的这段英文"${t}"，我暂时不太确定具体意思。\n\n不过如果你愿意说说，为什么深夜会想到这句话呢？`;
+        }
+
+        // "XX是谁" / "XX是什么" 知识查询
+        const whoPattern = t.match(/(.{1,15}?)(是谁|是什么人|何许人也)/);
+        if (whoPattern) {
+            const name = whoPattern[1].trim().replace(/^那个|^这个/, '');
+            return detectPersonOrThing(name) || `"${name}"——这个名字我不太了解。\n\n不过你深夜问起ta，说明ta在你心里有一定的位置。想说说和ta的故事吗？`;
+        }
+
+        // "为什么XX" 简短知识问题
+        if (/^(为什么|怎么|如何)/.test(t) && t.length <= 30) {
+            return [
+                `这个问题很好。虽然我不一定能给你完美的答案，但我想听听你怎么想的？\n\n有时候，提出问题的人，心里其实已经有了答案。`,
+                `你问的这个问题，说明你在认真思考。\n\n我知识有限，但也许我们可以一起想想？你心里有什么猜测吗？`,
+            ][Math.floor(Math.random() * 2)];
+        }
+
+        return null;
+    }
+
+    // 英文短语识别
+    function detectEnglishPhrase(text) {
+        const lower = text.toLowerCase().trim();
+        const p = {
+            'my heart will go on': '"My Heart Will Go On"——"我心永恒"。《泰坦尼克号》主题曲，Celine Dion 演唱。表达超越一切的、永不放弃的爱。',
+            'i love you': '"I love you"——"我爱你"。',
+            'i miss you': '"I miss you"——"我想你"。简简单单三个词，却能让人心头一暖。',
+            'thank you': '"Thank you"——"谢谢"。不用客气，能陪你聊天就是我存在的意义。',
+            'good night': '"Good night"——"晚安"。晚安，希望你今夜好梦。',
+            'good morning': '"Good morning"——"早上好"。这个时间来星洞，有什么想聊的吗？',
+            'good luck': '"Good luck"——"祝你好运"。把这份好运也送给你。',
+            'take care': '"Take care"——"保重/照顾好自己"。来自关心你的人时，分量很重。',
+            'i\'m sorry': '"I\'m sorry"——"对不起"。道歉需要勇气，能说出来就已经很重要了。',
+            'it\'s ok': '"It\'s OK"——"没关系/没事的"。简单一句话，却能让人松一口气。',
+            'never mind': '"Never mind"——"没关系/别放在心上"。',
+            'believe in yourself': '"Believe in yourself"——"相信自己"。有时候最难的不是相信别人，而是相信自己。',
+            'follow your heart': '"Follow your heart"——"跟随你的心"。心知道答案，只是有时候我们不敢听。',
+            'you are not alone': '"You are not alone"——"你不是一个人"。是的，你不是一个人。星洞里有颗星星陪着你。',
+            'everything will be ok': '"Everything will be OK"——"一切都会好的"。我相信这句话。',
+            'keep going': '"Keep going"——"继续前进"。无论多难，只要还在走，就比停在原地强。',
+            'stay strong': '"Stay strong"——"坚强一点"。你已经在很努力地坚强了。',
+            'dream big': '"Dream big"——"敢于梦想"。有梦想的人，即使深夜也闪闪发光。',
+            'time flies': '"Time flies"——"时光飞逝"。深夜回忆过去，确实会感慨时间过得好快。',
+            'no way': '"No way"——"不会吧/不可能"。发生了什么让你意想不到的事？',
+            'be happy': '"Be happy"——"要开心"。你说得对。但如果现在不开心，也没关系。',
+            'i don\'t know': '"I don\'t know"——"我不知道"。不知道也没关系，承认不知道本身就是一种诚实。',
+            'let me think': '"Let me think"——"让我想想"。有些事确实需要好好想想，不急。',
+        };
+        return p[lower] || null;
+    }
+
+    // 人物/事物识别
+    function detectPersonOrThing(name) {
+        const k = {
+            '泰坦尼克号': '《泰坦尼克号》是1997年詹姆斯·卡梅隆执导的经典电影，讲述了一段发生在沉船上的凄美爱情。Jack 和 Rose 的故事让无数人泪洒影院。',
+            '莎士比亚': '威廉·莎士比亚 (1564-1616)，英国最伟大的戏剧家和诗人。《哈姆雷特》《罗密欧与朱丽叶》《麦克白》都是他的作品。',
+            '披头士': '披头士 (The Beatles) 是1960年代最有影响力的英国摇滚乐队，成员是约翰·列侬、保罗·麦卡特尼、乔治·哈里森和林戈·斯塔尔。',
+            '周杰伦': '周杰伦是华语乐坛的天王级歌手，以独特的中国风闻名。他的歌几乎陪伴了90后、00后的整个青春。',
+            '林俊杰': '林俊杰 (JJ Lin) 是华语流行乐坛的实力派歌手。《江南》《修炼爱情》《可惜没如果》都是经典。',
+            '陈奕迅': '陈奕迅 (Eason Chan) 被誉为"歌神"。《十年》《好久不见》《孤勇者》都是传唱度极高的经典。',
+            '宫崎骏': '宫崎骏是日本动画大师。代表作有《千与千寻》《龙猫》《天空之城》《哈尔的移动城堡》等。他的动画总是充满温暖和想象力。',
+            '千与千寻': '《千与千寻》是宫崎骏2001年的作品。讲述了一个女孩在神秘世界中成长的故事。\n\n"不管前方的路有多苦，只要走的方向正确，都比站在原地更接近幸福。"',
+        };
+        return k[name] || null;
+    }
+
+    // ============================================
+    //  话题感知回复 - 根据具体关键词生成更有针对性的回复
+    // ============================================
     function detectTopicReply(text) {
+        // ========== 知识性问题 / 翻译 / 信息查询 ==========
+        const infoMatch = detectInfoQuestion(text);
+        if (infoMatch) return infoMatch;
+
         // 问候类
         if (/^(你好|嗨|hi|hello|hey|在吗|在不在|有人吗|你在|晚安|早安|早上好|晚上好|下午好)$/i.test(text.trim())) {
             const greetings = [
